@@ -6,7 +6,7 @@
 
 ## Descargar
 
-Desde la página oficial: **[videolite.zedran.xyz](https://videolite.zedran.xyz/#descarga)**. El SHA-256 de cada zip está ahí mismo. También hay una versión que funciona en el navegador, sin descargar nada.
+Desde la página oficial, **[videolite.zedran.xyz](https://videolite.zedran.xyz/#descarga)**, o directo de la **[última versión en GitHub](https://github.com/KiercZedran/Video-Lite/releases/latest)** (`VideoLite-win64.zip`). Las notas de cada versión traen el SHA-256 y el análisis de VirusTotal. También hay una versión que funciona en el navegador, sin descargar nada.
 
 Requisitos: Windows de 64 bits. Está probado en Windows 10 Pro.
 
@@ -56,7 +56,7 @@ Política de privacidad: [videolite.zedran.xyz/privacidad](https://videolite.zed
 ## Licencia
 
 - **Video Lite:** [GPL-3.0](LICENSE). Quien modifique el código y distribuya su versión tiene que publicarla con la misma licencia.
-- **`ffmpeg.exe`:** es [FFmpeg](https://ffmpeg.org), software libre bajo la GPL versión 2 o posterior, compilado con x264, LAME, dav1d y zlib. Su código fuente completo se publica junto a cada versión (`VideoLite-<versión>-ffmpeg-fuentes.zip`).
+- **`ffmpeg.exe`:** es [FFmpeg](https://ffmpeg.org), software libre bajo la GPL versión 2 o posterior, compilado con x264, LAME, dav1d y zlib. Su código fuente completo se publica en cada versión, junto a la app (`VideoLite-ffmpeg-fuentes.zip`).
 - **Nombre y logo:** Video Lite, Zedran Labs y sus logotipos no están cubiertos por la licencia. Una versión modificada debe usar otro nombre.
 - FFmpeg es una marca de Fabrice Bellard; Video Lite no está afiliado al proyecto FFmpeg.
 
@@ -77,7 +77,7 @@ Por ahora las versiones no llevan firma digital, así que Windows puede mostrar 
 
 **Video compressor and editor for Windows.** Choose how many MB the video should weigh and it comes out exact. Free, no ads, no install and no internet needed.
 
-- **Download:** from the official page, **[videolite.zedran.xyz/en](https://videolite.zedran.xyz/en/#descarga)**, which lists each zip's SHA-256. There is also an in-browser version that needs no download.
+- **Download:** from the official page, **[videolite.zedran.xyz/en](https://videolite.zedran.xyz/en/#descarga)**, or straight from the **[latest release](https://github.com/KiercZedran/Video-Lite/releases/latest)** (`VideoLite-win64.zip`). Each release's notes list its SHA-256 and VirusTotal analysis. There is also an in-browser version that needs no download.
 - **Requirements:** 64-bit Windows, tested on Windows 10 Pro.
 - **Features:**
   - exact size, with destinations for Discord, WhatsApp and email;

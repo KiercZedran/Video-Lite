@@ -135,6 +135,12 @@ Nuevo-Zip $app $zipApp
 Nuevo-Zip $src $zipSrc
 Remove-Item -Recurse -Force $tmp
 
+# Para el Release de GitHub, con nombre fijo: la página enlaza releases/latest/download/<nombre> y nunca cambia de enlace.
+$gh = Join-Path $dist "github"
+New-Item -ItemType Directory -Force $gh | Out-Null
+Copy-Item $zipApp (Join-Path $gh "VideoLite-win64.zip") -Force
+Copy-Item $zipSrc (Join-Path $gh "VideoLite-ffmpeg-fuentes.zip") -Force
+
 foreach ($z in @($zipApp, $zipSrc)) {
     "{0}  {1:N1} MB  SHA-256 {2}" -f (Split-Path $z -Leaf), ((Get-Item $z).Length / 1MB), (Get-FileHash $z -Algorithm SHA256).Hash
 }

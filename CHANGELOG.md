@@ -16,12 +16,14 @@ Será la **0.0.2.6**: lo que cambió desde la 0.0.2.5. Al publicar, esta secció
 
 - **La app de Windows pasa a ser de código abierto,** con licencia GPL-3.0. El código está en [github.com/KiercZedran/Video-Lite](https://github.com/KiercZedran/Video-Lite). Quien lo modifique y lo distribuya tiene que publicar su código con la misma licencia.
 - **La página** dice «Gratis y de código abierto» y enlaza el código.
+- **La descarga** apunta siempre a la última versión publicada en GitHub (`VideoLite-win64.zip`), así que el enlace no cambia con cada versión. El número, el SHA-256 y el análisis de VirusTotal de cada versión están en sus notas en GitHub.
 - **El texto de «Licencias»** de la app dice la licencia y dónde está el código.
 - **El `LEEME.txt` y el `README.txt` del zip** explican cómo quitar la app y aclaran que no se conecta a internet.
 
 ### Eliminado
 
 - **El EULA de la app** (`EULA.txt` y `EULA-en.txt`), que la declaraba de código cerrado. Lo reemplaza `LICENSE.txt` (GPL-3.0) dentro del zip.
+- **De la página:** el número de versión, el SHA-256 y el tamaño del zip, que ahora están en GitHub. La página tampoco aloja ya los zips.
 
 ---
 
