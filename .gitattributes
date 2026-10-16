@@ -1,0 +1,4 @@
+# Finales de línea: el repositorio guarda LF; el script de ffmpeg corre en MSYS2 y necesita LF también al descargarlo en Windows.
+* text=auto
+*.sh text eol=lf
+*.ico binary

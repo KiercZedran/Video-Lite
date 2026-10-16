@@ -1,0 +1,163 @@
+// Video Lite · textos de la app de escritorio en español e inglés (los mismos que sitio/i18n.js donde coinciden).
+// Tx.T("clave", args...) usa string.Format con InvariantCulture. Si falta una clave, devuelve la clave (se nota en pruebas).
+using System.Collections.Generic;
+using System.Globalization;
+
+namespace VideoLite
+{
+    static class Tx
+    {
+        public static string Idioma = "es";   // "es" o "en"
+
+        public static string T(string k, params object[] a)
+        {
+            string[] v;
+            if (!D.TryGetValue(k, out v)) return k;
+            string s = Idioma == "en" ? v[1] : v[0];
+            return a != null && a.Length > 0 ? string.Format(CultureInfo.InvariantCulture, s, a) : s;
+        }
+
+        static readonly Dictionary<string, string[]> D = new Dictionary<string, string[]>
+        {
+            // Encabezado y pie
+            { "appBy", new[] { "by Zedran Labs · comprime videos al tamaño que necesitas, en tu PC", "by Zedran Labs · compress videos to the size you need, on your PC" } },
+            { "temaOscuro", new[] { "Tema oscuro", "Dark theme" } },
+            { "temaClaro", new[] { "Tema claro", "Light theme" } },
+            { "otroIdioma", new[] { "English", "Español" } },
+            { "pie", new[] { "v{0} · gratis, sin anuncios · tus videos no salen de tu PC ·", "v{0} · free, no ads · your videos never leave your PC ·" } },
+            { "kofi", new[] { "Invítame un café en Ko-fi", "Buy me a coffee on Ko-fi" } },
+            { "reportar", new[] { "Reportar un problema", "Report a problem" } },
+            { "licencias", new[] { "Licencias", "Licenses" } },
+            { "privacidad", new[] { "Privacidad", "Privacy" } },
+            { "urlPrivacidad", new[] { "https://videolite.zedran.xyz/privacidad/", "https://videolite.zedran.xyz/en/privacy/" } },
+            { "urlSitio", new[] { "https://videolite.zedran.xyz/", "https://videolite.zedran.xyz/en/" } },
+            { "enviarA", new[] { "Agregar a «Enviar a»", "Add to “Send to”" } },
+            { "quitarEnviarA", new[] { "Quitar de «Enviar a»", "Remove from “Send to”" } },
+            { "enviarAok", new[] { "Listo: ahora puedes hacer clic derecho en un video → Enviar a → Video Lite.", "Done: now you can right-click a video → Send to → Video Lite." } },
+            { "enviarAquitado", new[] { "Video Lite ya no aparece en «Enviar a».", "Video Lite no longer appears in “Send to”." } },
+            // Videos
+            { "secVideos", new[] { "1 · Tus videos", "1 · Your videos" } },
+            { "agregarVideos", new[] { "Agregar videos…", "Add videos…" } },
+            { "agregarCarpeta", new[] { "Agregar carpeta…", "Add folder…" } },
+            { "quitarSel", new[] { "Quitar seleccionados", "Remove selected" } },
+            { "limpiar", new[] { "Limpiar lista", "Clear list" } },
+            { "colVideo", new[] { "Video", "Video" } },
+            { "colOriginal", new[] { "Original", "Original" } },
+            { "colQuedara", new[] { "Quedará en", "Will be" } },
+            { "colCalidad", new[] { "Calidad", "Quality" } },
+            { "colEstado", new[] { "Estado", "Status" } },
+            { "vacio", new[] { "Arrastra tus videos o una carpeta aquí", "Drag your videos or a folder here" } },
+            { "elegirVideos", new[] { "Elige tus videos", "Choose your videos" } },
+            { "filtroVideos", new[] { "Videos", "Videos" } },
+            { "filtroTodos", new[] { "Todos los archivos", "All files" } },
+            { "elegirCarpeta", new[] { "Elige una carpeta: se agregan todos sus videos (incluidas subcarpetas).", "Choose a folder: all its videos are added (including subfolders)." } },
+            { "dondeGuardar", new[] { "¿Dónde guardo los videos comprimidos?", "Where should I save the compressed videos?" } },
+            // Ajustes
+            { "secAjustes", new[] { "2 · Ajustes", "2 · Settings" } },
+            { "legTam", new[] { "Tamaño final de cada video", "Final size of each video" } },
+            { "paraEnviar", new[] { "Para enviar por", "Send via" } },
+            { "destAuto", new[] { "Recomendado (calidad casi igual)", "Recommended (near-original quality)" } },
+            { "destDiscord", new[] { "Discord gratis · 20 MB", "Discord (free) · 20 MB" } },
+            { "destNitro", new[] { "Discord Nitro Basic · 50 MB", "Discord Nitro Basic · 50 MB" } },
+            { "destWhatsapp", new[] { "WhatsApp · 64 MB, 720p", "WhatsApp · 64 MB, 720p" } },
+            { "destCorreo", new[] { "Correo (Gmail, Outlook) · 18 MB", "Email (Gmail, Outlook) · 18 MB" } },
+            { "destCustom", new[] { "Personalizado", "Custom size" } },
+            { "legCalidad", new[] { "Calidad (resolución máxima)", "Quality (maximum resolution)" } },
+            { "resOriginal", new[] { "Original", "Original" } },
+            { "helpRes", new[] { "Bajar la resolución deja más megas para cada cuadro: con poco espacio, 720p se ve mejor que 1080p borroso.", "Lowering the resolution leaves more megabytes for each frame: with little room, 720p looks better than a blurry 1080p." } },
+            { "legVel", new[] { "Velocidad de reproducción", "Playback speed" } },
+            { "helpVel", new[] { "La voz conserva su tono. A ×2 el video dura la mitad.", "Voices keep their pitch. At ×2 the video lasts half as long." } },
+            { "legAudio", new[] { "Audio", "Audio" } },
+            { "fixAudio", new[] { "Arreglar audio mudo", "Fix silent audio" } },
+            { "helpFix", new[] { "Corrige grabaciones que se oyen en audífonos pero no en bocinas, laptops o VLC (canales en fase invertida). Solo actúa si detecta el problema.", "Repairs recordings you can hear on headphones but not on speakers, laptops or VLC (phase-inverted channels). It only acts when it detects the problem." } },
+            { "mejorarVoz", new[] { "Mejorar voz", "Enhance voice" } },
+            { "helpVoz", new[] { "Para grabaciones de voz (clases, audiencias, juntas): quita zumbidos graves, baja el ruido de fondo y empareja el volumen. Con música puede sonar peor.", "For voice recordings (classes, hearings, meetings): removes low hum, lowers background noise and evens out the volume. It can make music sound worse." } },
+            { "masOpciones", new[] { "Más opciones ▾", "More options ▾" } },
+            { "menosOpciones", new[] { "Menos opciones ▴", "Fewer options ▴" } },
+            { "legFormato", new[] { "Formato de salida", "Output format" } },
+            { "fmtMp4", new[] { "MP4 (recomendado: abre en todos lados)", "MP4 (recommended: plays everywhere)" } },
+            { "fmtMov", new[] { "MOV (Apple y editores de video)", "MOV (Apple and video editors)" } },
+            { "fmtMkv", new[] { "MKV", "MKV" } },
+            { "fmtMp3", new[] { "Solo audio · MP3", "Audio only · MP3" } },
+            { "fmtM4a", new[] { "Solo audio · M4A (AAC)", "Audio only · M4A (AAC)" } },
+            { "helpSoloAudio", new[] { "En solo audio, el tamaño depende de la duración: MP3 a 192 kbps o M4A a 160 kbps.", "In audio-only mode the size depends on the length: MP3 at 192 kbps or M4A at 160 kbps." } },
+            { "legGirar", new[] { "Girar o voltear", "Rotate or flip" } },
+            { "rotNone", new[] { "Sin cambios", "No change" } },
+            { "rot90", new[] { "Girar 90° a la derecha", "Rotate 90° right" } },
+            { "rot270", new[] { "Girar 90° a la izquierda", "Rotate 90° left" } },
+            { "rot180", new[] { "Girar 180°", "Rotate 180°" } },
+            { "flipH", new[] { "Voltear horizontal (espejo)", "Flip horizontally (mirror)" } },
+            { "flipV", new[] { "Voltear vertical", "Flip vertically" } },
+            { "sinAudio", new[] { "Sin audio (todo el tamaño para la imagen)", "No audio (the whole size for the picture)" } },
+            { "avisar", new[] { "Avisarme al terminar (sonido y notificación)", "Notify me when done (sound and notification)" } },
+            { "legGuardar", new[] { "Guardar en", "Save to" } },
+            { "junto", new[] { "Una carpeta «Video Lite» junto a cada original", "A “Video Lite” folder next to each original" } },
+            { "cambiar", new[] { "Cambiar…", "Change…" } },
+            // Estimado y acciones
+            { "estVacio", new[] { "Agrega un video para ver cuánto pesará.", "Add a video to see how much it will weigh." } },
+            { "estAnalizando", new[] { "Analizando…", "Analyzing…" } },
+            { "estChico", new[] { "El tamaño elegido es demasiado pequeño para estos videos.", "The chosen size is too small for these videos." } },
+            { "estTotal", new[] { "≈ {0} en total", "≈ {0} in total" } },
+            { "estUno", new[] { "≈ {0}", "≈ {0}" } },
+            { "antes", new[] { "Antes: {0} · {1}", "Before: {0} · {1}" } },
+            { "menos", new[] { "{0} % menos", "{0}% smaller" } },
+            { "igual", new[] { "casi igual", "about the same" } },
+            { "calEsperada", new[] { "Calidad esperada: {0}", "Expected quality: {0}" } },
+            { "bajaRes", new[] { " — baja la resolución para que se vea más nítido.", " — lower the resolution for a sharper result." } },
+            { "doble", new[] { "Doble clic en un video para verlo en su carpeta.", "Double-click a video to see it in its folder." } },
+            { "comprimir", new[] { "Procesar", "Process" } },
+            { "comprimirN", new[] { "Procesar {0} videos", "Process {0} videos" } },
+            { "comprimiendo", new[] { "Procesando…", "Processing…" } },
+            { "cancelar", new[] { "Cancelar", "Cancel" } },
+            { "abrirCarpeta", new[] { "Abrir carpeta", "Open folder" } },
+            { "cancelando", new[] { "Cancelando…", "Cancelling…" } },
+            { "cancelado", new[] { "Cancelado.", "Cancelled." } },
+            { "listoFin", new[] { "Listo: {0} de {1} en {2}.", "Done: {0} of {1} in {2}." } },
+            { "videoNdeM", new[] { "Video {0} de {1}{2}", "Video {0} of {1}{2}" } },
+            { "faltan", new[] { " · faltan ~{0}", " · ~{0} left" } },
+            // Estados en la lista
+            { "porComprimir", new[] { "por procesar · sale {0}", "to process · output {0}" } },
+            { "dura", new[] { ", dura {0}", ", lasts {0}" } },
+            { "analizando", new[] { "analizando…", "analyzing…" } },
+            { "noCabe", new[] { "no cabe", "doesn't fit" } },
+            { "subeTam", new[] { "sube el tamaño", "raise the size" } },
+            { "empezando", new[] { "empezando…", "starting…" } },
+            { "listoEn", new[] { "listo en {0}", "done in {0}" } },
+            { "audioCorr", new[] { " · audio corregido", " · audio fixed" } },
+            { "noCupoEstado", new[] { "no cupo en el tamaño: {0}", "didn't fit the size: {0}" } },
+            { "canceladoMin", new[] { "cancelado", "cancelled" } },
+            { "sinAudioMeta", new[] { " · sin audio", " · no audio" } },
+            { "soloAudio", new[] { "solo audio {0}", "audio only {0}" } },
+            { "sinPista", new[] { "no tiene audio", "has no audio" } },
+            { "noLegible", new[] { "No parece un video que se pueda leer.", "This doesn't look like a readable video." } },
+            // Calidad
+            { "qSame", new[] { "Parecida al original", "Close to the original" } },
+            { "qVeryGood", new[] { "Muy buena", "Very good" } },
+            { "qGood", new[] { "Buena", "Good" } },
+            { "qOk", new[] { "Aceptable", "Acceptable" } },
+            { "qLow", new[] { "Baja", "Low" } },
+            { "qVeryLow", new[] { "Muy baja", "Very low" } },
+            // Avisos y diálogos
+            { "ffmpegFalta", new[] { "No encontré ffmpeg.exe. Ponlo junto a VideoLite.exe (o en una carpeta «ffmpeg» al lado) y vuelve a abrir la app.", "I couldn't find ffmpeg.exe. Put it next to VideoLite.exe (or in an “ffmpeg” folder beside it) and open the app again." } },
+            { "cerrarConfirm", new[] { "Hay videos procesándose. ¿Cancelar y salir?", "Videos are being processed. Cancel and quit?" } },
+            { "notifTitulo", new[] { "Video Lite: listo", "Video Lite: done" } },
+            { "notifTexto", new[] { "Videos procesados: {0} de {1}.", "Videos processed: {0} of {1}." } },
+            { "reporteHint", new[] { " Si sigue fallando, avísame por Discord o a Kierc117@hotmail.com.", " If it keeps failing, let me know on Discord or at Kierc117@hotmail.com." } },
+            { "licTexto", new[] {
+                "Video Lite · by Zedran Labs — v{0}\nGratis y de código abierto: licencia GPL-3.0 (LICENSE.txt). Código: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe es FFmpeg (https://ffmpeg.org) compilado por Zedran Labs con x264, dav1d, LAME y zlib. Es software libre bajo la GPL versión 2 o posterior y es un programa aparte: Video Lite solo lo ejecuta. Su código fuente completo se descarga del mismo lugar que Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nTus videos se procesan en esta PC y no se envían a ningún servidor.\n\n¿Abrir la carpeta de licencias?",
+                "Video Lite · by Zedran Labs — v{0}\nFree and open source: GPL-3.0 license (LICENSE.txt). Code: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe is FFmpeg (https://ffmpeg.org) built by Zedran Labs with x264, dav1d, LAME and zlib. It is free software under the GPL version 2 or later and a separate program: Video Lite only runs it. Its complete source code is downloaded from the same place as Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nYour videos are processed on this PC and are never sent to any server.\n\nOpen the licenses folder?" } },
+            // Motor
+            { "revisandoAudio", new[] { "Revisando el audio…", "Checking the audio…" } },
+            { "faseNoMedida", new[] { "No se pudo revisar la fase del audio; se dejó en estéreo.", "The audio phase couldn't be checked; it was left in stereo." } },
+            { "faseCorregida", new[] { "Se detectó audio con canales invertidos y se corrigió.", "Phase-inverted audio was detected and fixed." } },
+            { "pasada1Ini", new[] { "Pasada 1 de 2…", "Pass 1 of 2…" } },
+            { "pasada1", new[] { "Pasada 1 de 2", "Pass 1 of 2" } },
+            { "pasada2", new[] { "Pasada 2 de 2", "Pass 2 of 2" } },
+            { "ajustando", new[] { "Ajustando el tamaño (intento {0})", "Adjusting the size (attempt {0})" } },
+            { "extrayendo", new[] { "Extrayendo el audio", "Extracting the audio" } },
+            { "noCupoNota", new[] { "No cupo en {0}: quedó en {1}. Baja la resolución o sube el tamaño.", "It didn't fit in {0}: it came out at {1}. Lower the resolution or raise the size." } },
+            { "ffmpegFallo", new[] { "FFmpeg no pudo terminar", "FFmpeg couldn't finish" } },
+            { "sinPistaAudio", new[] { "Este video no tiene audio para extraer.", "This video has no audio to extract." } },
+        };
+    }
+}

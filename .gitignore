@@ -1,0 +1,21 @@
+# Este repositorio publica solo la app de Windows. Funciona como lista blanca:
+# se ignora todo y solo entra lo que se nombra abajo.
+/*
+!/.gitignore
+!/.gitattributes
+!/.github/
+!/README.md
+!/LICENSE
+!/CHANGELOG.md
+
+!/escritorio/
+/escritorio/*
+!/escritorio/src/
+!/escritorio/videolite.ico
+!/escritorio/compilar.ps1
+!/escritorio/empaquetar.ps1
+
+!/escritorio/ffmpeg-build/
+/escritorio/ffmpeg-build/*
+!/escritorio/ffmpeg-build/compilar-ffmpeg.sh
+!/escritorio/ffmpeg-build/LEEME.md

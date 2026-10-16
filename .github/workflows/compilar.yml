@@ -1,0 +1,29 @@
+# Compila VideoLite.exe en cada cambio, con el mismo script que se usa en local (escritorio/compilar.ps1).
+# Las versiones firmadas deben salir de esta compilación, no de una PC.
+name: Compilar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compilar:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar VideoLite.exe (csc de .NET Framework 4.8)
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File escritorio\compilar.ps1
+
+      - name: Guardar el exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoLite-exe
+          path: escritorio/dist/VideoLite.exe
+          if-no-files-found: error
