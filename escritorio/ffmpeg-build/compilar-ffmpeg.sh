@@ -118,7 +118,7 @@ tar -xOf "dav1d-$DAV1D_VER.tar.xz" "dav1d-$DAV1D_VER/COPYING" > "$SALIDA/licenci
 tar -xOzf "zlib-$ZLIB_VER.tar.gz" "zlib-$ZLIB_VER/LICENSE" > "$SALIDA/licencias/zlib-LICENSE.txt"
 tar -xOzf "lame-$LAME_VER.tar.gz" "lame-$LAME_VER/COPYING" > "$SALIDA/licencias/lame-COPYING.txt"
 {
-  echo "ffmpeg.exe de Video Lite — compilado $(date -u +%Y-%m-%dT%H:%MZ)"
+  echo "ffmpeg.exe de Video Lite, compilado $(date -u +%Y-%m-%dT%H:%MZ)"
   echo "SHA-256: $(sha256sum "$SALIDA/ffmpeg.exe" | cut -d' ' -f1)"
   echo
   echo "FFmpeg $FFMPEG_VER  sha256 $(sha256sum "ffmpeg-$FFMPEG_VER.tar.xz" | cut -d' ' -f1)  $FFMPEG_URL"

@@ -3,7 +3,7 @@
 #   dist\VideoLite-<ver>-ffmpeg-fuentes.zip  el código fuente completo de ffmpeg.exe (GPL) y su receta
 # Uso: powershell -ExecutionPolicy Bypass -File escritorio\empaquetar.ps1
 $ErrorActionPreference = "Stop"
-$ver = "0.0.3"
+$ver = "0.5"
 $aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dist = Join-Path $aqui "dist"
 $fb = Join-Path $aqui "ffmpeg-build"
@@ -62,7 +62,7 @@ code at https://github.com/KiercZedran/Video-Lite) that runs ffmpeg.exe as an in
 "@ | Set-Content -Encoding utf8 "$lic\ffmpeg-CODIGO-FUENTE.txt"
 
 @"
-VIDEO LITE · BY ZEDRAN LABS — v$ver para Windows 10/11 (64 bits)
+VIDEO LITE · BY ZEDRAN LABS · v$ver para Windows 10/11 (64 bits)
 
 1. Descomprime esta carpeta donde quieras. No se instala.
 2. Abre VideoLite.exe. Arrastra tus videos, elige el tamaño final y da clic en Procesar.
@@ -86,7 +86,7 @@ Reportes: https://discord.com/invite/2ZRbaYDAnR · Kierc117@hotmail.com
 "@ | Set-Content -Encoding utf8 "$app\LEEME.txt"
 
 @"
-VIDEO LITE · BY ZEDRAN LABS — v$ver for Windows 10/11 (64-bit)
+VIDEO LITE · BY ZEDRAN LABS · v$ver for Windows 10/11 (64-bit)
 
 1. Unzip this folder wherever you like. Nothing gets installed.
 2. Open VideoLite.exe (the "English" button switches the language). Drag your videos in,

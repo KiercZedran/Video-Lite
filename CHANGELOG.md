@@ -4,13 +4,18 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 - **Qué se anota:** cada versión publicada dice qué cambió **desde la versión publicada anterior**, en cuatro apartados: novedades, cambios, correcciones y lo que se eliminó. Lo que se arregló antes de publicarse no aparece como corrección, porque nadie lo llegó a usar.
 - **Compilaciones internas:** las que nunca se publicaron están en la tabla del final.
-- **Numeración:** la **0.0.2.5** es posterior a la **0.1**, aunque el número sea menor: la versión de arreglos se numeró así a propósito (2026-10-14).
+- **Numeración:** la **0.0.2.5** es posterior a la **0.1**, aunque el número sea menor: la versión de arreglos se numeró así a propósito (2026-10-14). Después de la 0.0.2.6 sigue la **0.5**, el primer número sin usar: la 0.1 ya se había publicado y la 0.2, 0.3 y 0.4 fueron compilaciones internas (2026-10-19).
 
 ---
 
-## Sin publicar
+## 0.5 - 2026-10-19 - publicada
 
-Será la **0.0.3**: lo que cambió desde la 0.0.2.6. Al publicar, esta sección recibe su fecha y los datos de los zips.
+Lo que cambió desde la 0.0.2.6. Es la primera versión con el editor en la app, y con ella se actualiza también la página.
+
+| Descarga | Tamaño | SHA-256 |
+|---|---|---|
+| `VideoLite-win64.zip` | 7 226 834 B | `cb0971ebad013526761f920f9f13664cfef0db159b82be7218ee9ad70114f7d4` |
+| `VideoLite-ffmpeg-fuentes.zip` | 17 155 984 B | `5994180b80b757abbb15115eb070e29737f67cca61b87d9194ddd2a234641e28` |
 
 ### Novedades
 

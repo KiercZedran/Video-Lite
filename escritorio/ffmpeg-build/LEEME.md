@@ -1,4 +1,4 @@
-# ffmpeg.exe de Video Lite — compilación mínima (código abierto, GPL)
+# ffmpeg.exe de Video Lite: compilación mínima (código abierto, GPL)
 
 Video Lite para Windows usa un `ffmpeg.exe` propio, compilado solo con lo que la app necesita: leer los formatos de video comunes, cambiar escala, velocidad, giro y audio, y escribir MP4/MOV/MKV con H.264 + AAC, o solo el audio en MP3 o M4A. Esta carpeta trae **la receta completa y reproducible** de esa compilación.
 

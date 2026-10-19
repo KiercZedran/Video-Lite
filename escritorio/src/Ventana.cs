@@ -18,15 +18,15 @@ using System.Windows.Forms;
 [assembly: AssemblyProduct("Video Lite · by Zedran Labs")]
 [assembly: AssemblyCompany("Zedran Labs")]
 [assembly: AssemblyCopyright("Zedran Labs")]
-[assembly: AssemblyVersion("0.0.3")]
-[assembly: AssemblyFileVersion("0.0.3")]
+[assembly: AssemblyVersion("0.5")]
+[assembly: AssemblyFileVersion("0.5")]
 
 namespace VideoLite
 {
     // Mismos valores que :root y :root[data-theme="dark"] de sitio/styles.css (contraste verificado con herramientas/contraste.py).
     static class C
     {
-        public const string Version = "0.0.3";
+        public const string Version = "0.5";
         public static Color Bg, Surface, Surface2, Line, LineStrong, Ink, Ink2, Ink3, Accent, AccentText, AccentSoft, Amber, AmberSoft, Danger;
         public static bool Oscuro;
         static C() { Aplicar(false); }
