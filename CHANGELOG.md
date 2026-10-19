@@ -20,12 +20,14 @@ Será la **0.0.3**: lo que cambió desde la 0.0.2.6. Al publicar, esta sección 
   - Línea de tiempo con miniaturas del video y la forma de onda del audio.
   - Recortar el inicio y el fin, quitar tramos, silenciar el audio por tramos, el volumen de 0 a 300 % y mover el audio hasta 5 s. Cada cambio se puede deshacer.
   - El resultado es el mismo que en la web: la app arma el mismo grafo de ffmpeg.
+  - Con el editor activo, los ajustes bajan a una franja debajo del editor, en columnas, con el estimado y "Procesar" a la derecha. Así el editor ocupa casi toda la ventana. La explicación de cada ajuste aparece al pasar el mouse.
 
 ### Cambios
 
 - **La página** dice "Gratis y de código abierto", enlaza el código y, en la sección de descarga, que la app trae el mismo editor.
 - **La descarga** apunta siempre a la última versión publicada en GitHub (`VideoLite-win64.zip`), así que el enlace no cambia con cada versión. El número, el SHA-256 y el análisis de VirusTotal de cada versión están en sus notas en GitHub.
 - **`ffmpeg.exe`** se recompiló con los filtros del editor (`split`, `asplit`, `concat`, `asetpts`, `apad`, `adelay` y `volume`) y con salida cruda para las miniaturas y la forma de onda. Las fuentes son las mismas.
+- **"Agregar a "Enviar a""** explica qué va a hacer y pregunta antes de crear el acceso directo. Con "No", no crea nada.
 - **Los textos de la app y del zip** usan comillas rectas, y las propiedades del programa dicen Zedran Labs como autor.
 - Revisión de gramática.
 

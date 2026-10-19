@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs — ventana principal (WinForms, .NET Framework 4.8, C# 5).
+﻿// Video Lite · Zedran Labs — ventana principal (WinForms, .NET Framework 4.8, C# 5).
 // Colores = tokens de sitio/styles.css (paleta del Comparador antes/después), en tema claro y oscuro.
 // Textos en Textos.cs (español e inglés, se cambian en vivo). El editor de un video está en Editor.cs.
 using System;
@@ -221,6 +221,13 @@ namespace VideoLite
         Casilla chkFix, chkVoz, chkJunto, chkSinAudio, chkAvisar;
         TextBox txtCarpeta;
         Panel panelAjustes;
+        TableLayoutPanel cuerpo, marcoAjustes;
+        FlowLayoutPanel flujoAjustes, fijoAjustes;
+        Label sepAjustes;
+        Label lblSecAjustes;
+        readonly List<FlowLayoutPanel> seccionesAjustes = new List<FlowLayoutPanel>();
+        readonly List<Tuple<Label, Control[]>> ayudasAjustes = new List<Tuple<Label, Control[]>>();
+        readonly ToolTip globos = new ToolTip { AutoPopDelay = 15000, InitialDelay = 400 };
         readonly List<Opcion> radiosRes = new List<Opcion>(), radiosVel = new List<Opcion>();
         Font fBase, fBold, fTitulo, fGrande, fSec, fChico;
 
@@ -302,7 +309,8 @@ namespace VideoLite
             filaEditor.Controls.Add(ayudaEditor);
             raiz.Controls.Add(filaEditor, 0, 2);
 
-            var cuerpo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+            cuerpo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
+            cuerpo.Resize += (s, e) => AjustarAltoAjustes();
             cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 57));
             cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43));
             raiz.Controls.Add(cuerpo, 0, 3);
@@ -410,28 +418,31 @@ namespace VideoLite
 
         Control ConstruirAjustes()
         {
-            var marco = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = C.Surface, Margin = new Padding(0), Padding = new Padding(1) };
+            var marco = marcoAjustes = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = C.Surface, Margin = new Padding(0), Padding = new Padding(1) };
             marco.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             marco.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             marco.Paint += (s, e) => { using (var p = new Pen(C.Line)) e.Graphics.DrawRectangle(p, 0, 0, marco.Width - 1, marco.Height - 1); };
             var panel = new Panel { Dock = DockStyle.Fill, BackColor = C.Surface, Padding = new Padding(16, 12, 16, 4), AutoScroll = true, Margin = new Padding(0) };
             panelAjustes = panel;
-            var f = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Top, BackColor = C.Surface };
+            var f = flujoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Top, BackColor = C.Surface };
             panel.Controls.Add(f);
-            var fijo = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Fill, BackColor = C.Surface, Padding = new Padding(16, 4, 16, 12), Margin = new Padding(0) };
+            var fijo = fijoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Fill, BackColor = C.Surface, Padding = new Padding(16, 4, 16, 12), Margin = new Padding(0) };
             marco.Controls.Add(panel, 0, 0);
             marco.Controls.Add(fijo, 0, 1);
-            // Solo a las etiquetas: con MaximumSize, el ComboBox pierde su alto en el FlowLayoutPanel y se encima con la fila de abajo.
-            panel.Resize += (s, e) => { foreach (Control c in f.Controls.Cast<Control>().Concat(panelMas != null ? panelMas.Controls.Cast<Control>() : Enumerable.Empty<Control>())) if (c is Label || c is Casilla) c.MaximumSize = new Size(Math.Max(200, panel.ClientSize.Width - 36), 0); };
+            // Solo a las etiquetas y a las secciones: con MaximumSize, el ComboBox pierde su alto en el FlowLayoutPanel.
+            panel.Resize += (s, e) => AjustarAjustes();
 
-            f.Controls.Add(L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, "secAjustes"));
+            lblSecAjustes = L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, "secAjustes");
+            f.Controls.Add(lblSecAjustes);
+            FlowLayoutPanel sec;   // cada grupo va en su sección: debajo del editor se acomodan en columnas
 
             // Tamaño: destino + deslizador + número
-            f.Controls.Add(Leyenda("legTam"));
-            f.Controls.Add(L(new Label { AutoSize = true, ForeColor = C.Ink2, Font = fChico, Margin = new Padding(0, 0, 0, 0) }, "paraEnviar"));
+            sec = Seccion();
+            sec.Controls.Add(Leyenda("legTam"));
+            sec.Controls.Add(L(new Label { AutoSize = true, ForeColor = C.Ink2, Font = fChico, Margin = new Padding(0, 0, 0, 0) }, "paraEnviar"));
             cbDestino = Combo(DestKeys, DEST_AUTO);
             cbDestino.SelectedIndexChanged += (s, e) => { if (!actualizando) CambioDestino(); };
-            f.Controls.Add(ConBorde(cbDestino));
+            sec.Controls.Add(ConBorde(cbDestino));
             var filaTam = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 10) };
             barraTam = new TrackBar { Minimum = 0, Maximum = 1000, TickStyle = TickStyle.None, Width = 220, BackColor = C.Surface, Margin = new Padding(0, 4, 8, 0) };
             barraTam.Scroll += (s, e) => { if (!actualizando) PonerTam(DesdeBarra(barraTam.Value), true); };
@@ -439,10 +450,11 @@ namespace VideoLite
             tam.ValueChanged += (s, e) => { if (!actualizando) PonerTam((double)tam.Value, true); };
             filaTam.Controls.Add(barraTam); filaTam.Controls.Add(tam);
             filaTam.Controls.Add(new Label { Text = "MB", AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 0, 0) });
-            f.Controls.Add(filaTam);
+            sec.Controls.Add(filaTam);
 
             // Calidad
-            f.Controls.Add(Leyenda("legCalidad"));
+            sec = Seccion();
+            sec.Controls.Add(Leyenda("legCalidad"));
             var filaRes = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             foreach (var r in new[] { Tuple.Create("1080p", 1080), Tuple.Create("720p", 720), Tuple.Create("480p", 480), Tuple.Create("360p", 360) }.Reverse().Concat(new[] { Tuple.Create("", 0) }).Reverse())
             {
@@ -451,11 +463,11 @@ namespace VideoLite
                 rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.Res = (int)((RadioButton)s).Tag; Cambio(); } };
                 radiosRes.Add(rb); filaRes.Controls.Add(rb);
             }
-            f.Controls.Add(filaRes);
-            f.Controls.Add(Ayuda("helpRes"));
+            sec.Controls.Add(filaRes);
+            sec.Controls.Add(AyudaAjuste("helpRes", radiosRes.Cast<Control>().ToArray()));
 
-            // Velocidad
-            f.Controls.Add(Leyenda("legVel"));
+            // Velocidad (en la misma sección que la calidad)
+            sec.Controls.Add(Leyenda("legVel"));
             var filaVel = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             foreach (var v in new[] { 0.5, 1, 1.5, 2 })
             {
@@ -463,24 +475,25 @@ namespace VideoLite
                 rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.Speed = (double)((RadioButton)s).Tag; Cambio(); } };
                 radiosVel.Add(rb); filaVel.Controls.Add(rb);
             }
-            f.Controls.Add(filaVel);
-            f.Controls.Add(Ayuda("helpVel"));
+            sec.Controls.Add(filaVel);
+            sec.Controls.Add(AyudaAjuste("helpVel", radiosVel.Cast<Control>().ToArray()));
 
             // Audio
-            f.Controls.Add(Leyenda("legAudio"));
+            sec = Seccion();
+            sec.Controls.Add(Leyenda("legAudio"));
             chkFix = L(new Casilla { Font = fBold, Checked = true, AutoSize = true, Margin = new Padding(0) }, "fixAudio");
             chkFix.CheckedChanged += (s, e) => { aj.Fix = chkFix.Checked; };
-            f.Controls.Add(chkFix);
-            f.Controls.Add(Ayuda("helpFix"));
+            sec.Controls.Add(chkFix);
+            sec.Controls.Add(AyudaAjuste("helpFix", chkFix));
             chkVoz = L(new Casilla { Font = fBold, AutoSize = true, Margin = new Padding(0) }, "mejorarVoz");
             chkVoz.CheckedChanged += (s, e) => { aj.Voz = chkVoz.Checked; };
-            f.Controls.Add(chkVoz);
-            f.Controls.Add(Ayuda("helpVoz"));
+            sec.Controls.Add(chkVoz);
+            sec.Controls.Add(AyudaAjuste("helpVoz", chkVoz));
 
-            // Más opciones (plegable): formato, giro, sin audio, aviso al terminar
-            btnMas = L(Boton("", false, (s, e) => { panelMas.Visible = !panelMas.Visible; ActualizarBotonMas(); }), "masOpciones");
+            // Más opciones (plegable): formato, giro, sin audio, aviso al terminar (en la sección del audio)
+            btnMas = L(Boton("", false, (s, e) => { panelMas.Visible = !panelMas.Visible; ActualizarBotonMas(); AjustarAltoAjustes(); }), "masOpciones");
             btnMas.Font = fChico;
-            f.Controls.Add(btnMas);
+            sec.Controls.Add(btnMas);
             panelMas = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = new Padding(0, 4, 0, 8), BackColor = C.Surface };
             panelMas.Controls.Add(Leyenda("legFormato"));
             cbFormato = Combo(FmtKeys, 0);
@@ -497,10 +510,11 @@ namespace VideoLite
             panelMas.Controls.Add(chkSinAudio);
             chkAvisar = L(new Casilla { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "avisar");
             panelMas.Controls.Add(chkAvisar);
-            f.Controls.Add(panelMas);
+            sec.Controls.Add(panelMas);
 
             // Guardar en
-            f.Controls.Add(Leyenda("legGuardar"));
+            sec = Seccion();
+            sec.Controls.Add(Leyenda("legGuardar"));
             chkJunto = L(new Casilla { Checked = true, AutoSize = true, Margin = new Padding(0) }, "junto");
             var filaCarp = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 10) };
             txtCarpeta = new TextBox { Width = 260, Enabled = false, BackColor = C.Bg, ForeColor = C.Ink, Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Video Lite") };
@@ -508,10 +522,10 @@ namespace VideoLite
             btnCarpeta.Enabled = false;
             chkJunto.CheckedChanged += (s, e) => { txtCarpeta.Enabled = btnCarpeta.Enabled = !chkJunto.Checked; };
             filaCarp.Controls.Add(txtCarpeta); filaCarp.Controls.Add(btnCarpeta);
-            f.Controls.Add(chkJunto); f.Controls.Add(filaCarp);
+            sec.Controls.Add(chkJunto); sec.Controls.Add(filaCarp);
 
             // Parte fija: estimado, botón, progreso
-            var sep = new Label { AutoSize = false, Height = 1, Width = 400, BackColor = C.Line, Margin = new Padding(0, 0, 0, 8) };
+            var sep = sepAjustes = new Label { AutoSize = false, Height = 1, Width = 400, BackColor = C.Line, Margin = new Padding(0, 0, 0, 8) };
             fijo.Controls.Add(sep);
             estGrande = new Label { Text = "", Font = fGrande, AutoSize = true, Margin = new Padding(0) };
             estLinea1 = new Label { Text = "", ForeColor = C.Ink2, AutoSize = true, Margin = new Padding(0, 2, 0, 0) };
@@ -529,6 +543,11 @@ namespace VideoLite
             progreso = new ProgressBar { Width = 400, Height = 10, Maximum = 1000, Visible = false, Margin = new Padding(0, 0, 0, 4) };
             estado = new Label { Text = "", ForeColor = C.Ink2, AutoSize = true, Margin = new Padding(0) };
             fijo.Controls.Add(progreso); fijo.Controls.Add(estado);
+            estado.Visible = false;   // sin texto no ocupa alto; aparece con el primer mensaje
+            estado.TextChanged += (s, e) => estado.Visible = estado.Text != "";
+            // Al procesar crece (barra y mensaje): la franja también. Después del acomodo en curso, porque un cambio de alto
+            // pedido mientras "cuerpo" se acomoda no se aplica hasta el siguiente acomodo.
+            fijo.Layout += (s, e) => { if (IsHandleCreated) BeginInvoke((Action)AjustarAltoAjustes); };
             fijo.Resize += (s, e) =>
             {
                 int an = Math.Max(200, fijo.ClientSize.Width - 32);
@@ -536,6 +555,126 @@ namespace VideoLite
                 foreach (Control c in new Control[] { estLinea1, estLinea2, estado }) c.MaximumSize = new Size(an, 0);
             };
             return marco;
+        }
+
+        // Ayuda de un ajuste: debajo del control en la columna de la derecha; en la franja de abajo del editor se oculta
+        // y su texto queda en el globo de esos controles (para que la franja sea baja).
+        Label AyudaAjuste(string clave, params Control[] de)
+        {
+            var l = Ayuda(clave);
+            ayudasAjustes.Add(Tuple.Create(l, de));
+            return l;
+        }
+
+        void ActualizarGlobos()
+        {
+            foreach (var a in ayudasAjustes)
+                foreach (var c in a.Item2) globos.SetToolTip(c, editorOn ? a.Item1.Text : null);
+        }
+
+        FlowLayoutPanel Seccion()
+        {
+            var sec = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = C.Surface, Margin = new Padding(0, 0, 12, 0) };
+            flujoAjustes.Controls.Add(sec);
+            seccionesAjustes.Add(sec);
+            return sec;
+        }
+
+        static IEnumerable<Control> Descendientes(Control c)
+        {
+            foreach (Control h in c.Controls) { yield return h; foreach (var x in Descendientes(h)) yield return x; }
+        }
+
+        // Con el editor activo, los ajustes pasan debajo del editor, a todo el ancho y en columnas (como en la web), con el
+        // estimado y "Procesar" a la derecha: el editor se queda con casi toda la ventana. Sin el editor, vuelven a la derecha.
+        void AcomodoAjustes()
+        {
+            bool abajo = editorOn;
+            cuerpo.SuspendLayout(); marcoAjustes.SuspendLayout();
+            cuerpo.ColumnCount = 2; cuerpo.RowCount = 2;
+            cuerpo.SetCellPosition(marcoAjustes, abajo ? new TableLayoutPanelCellPosition(0, 1) : new TableLayoutPanelCellPosition(1, 0));
+            cuerpo.ColumnStyles.Clear(); cuerpo.RowStyles.Clear();
+            if (abajo)
+            {
+                cuerpo.ColumnCount = 1;
+                cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                cuerpo.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                cuerpo.RowStyles.Add(new RowStyle(SizeType.Absolute, fBase.Height * 14));
+                colVideos.Margin = new Padding(0, 0, 0, 10);
+            }
+            else
+            {
+                cuerpo.RowCount = 1;
+                cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 57));
+                cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43));
+                cuerpo.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                colVideos.Margin = new Padding(0, 0, 12, 0);
+            }
+            marcoAjustes.ColumnCount = 2; marcoAjustes.RowCount = 2;
+            marcoAjustes.SetCellPosition(fijoAjustes, abajo ? new TableLayoutPanelCellPosition(1, 0) : new TableLayoutPanelCellPosition(0, 1));
+            marcoAjustes.ColumnStyles.Clear(); marcoAjustes.RowStyles.Clear();
+            if (abajo)
+            {
+                marcoAjustes.RowCount = 1;
+                marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, AnchoFijo));
+                marcoAjustes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            }
+            else
+            {
+                marcoAjustes.ColumnCount = 1;
+                marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                marcoAjustes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                marcoAjustes.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+            flujoAjustes.FlowDirection = abajo ? FlowDirection.LeftToRight : FlowDirection.TopDown;
+            flujoAjustes.WrapContents = abajo;
+            lblSecAjustes.Visible = !abajo;    // abajo del editor, la franja se explica sola
+            sepAjustes.Visible = !abajo;       // la raya separa el estimado de los ajustes de arriba; abajo van lado a lado
+            barraTam.Width = abajo ? 160 : 220;   // en columnas: que quepan el número y "MB"
+            for (int i = 0; i < radiosRes.Count; i++)     // y las cinco calidades en una línea
+                radiosRes[i].Margin = new Padding(0, 0, i == radiosRes.Count - 1 ? 0 : abajo ? 5 : 10, 0);
+            txtCarpeta.Width = abajo ? 200 : 260;
+            foreach (var a in ayudasAjustes) a.Item1.Visible = !abajo;
+            ActualizarGlobos();
+            marcoAjustes.ResumeLayout(true); cuerpo.ResumeLayout(true);
+            AjustarAjustes();
+            AjustarAltoAjustes();
+            marcoAjustes.Invalidate();
+        }
+
+        // Debajo del editor, ancho de la columna del estimado y "Procesar" (a la derecha de los ajustes).
+        int AnchoFijo { get { return fBase.Height * 15; } }
+
+        // Ancho de las etiquetas y de las secciones: una sola columna a la derecha, o columnas de ~20 líneas de ancho abajo.
+        void AjustarAjustes()
+        {
+            if (panelAjustes == null || flujoAjustes == null) return;
+            int an = Math.Max(200, panelAjustes.ClientSize.Width - panelAjustes.Padding.Horizontal - 4);
+            int col = an;
+            if (editorOn) { int n = Math.Max(1, Math.Min(seccionesAjustes.Count, an / (fBase.Height * 19))); col = (an - 4) / n - 12; }   // 4 px de holgura: con el ancho exacto, la última sección baja de línea
+            flujoAjustes.MaximumSize = editorOn ? new Size(an, 0) : Size.Empty;
+            foreach (var sec in seccionesAjustes)
+            {
+                sec.MinimumSize = editorOn ? new Size(col, 0) : Size.Empty;
+                sec.MaximumSize = editorOn ? new Size(col, 0) : Size.Empty;
+            }
+            int etiqueta = editorOn ? col - 4 : Math.Max(200, panelAjustes.ClientSize.Width - 36);
+            foreach (Control c in Descendientes(flujoAjustes)) if (c is Label || c is Casilla) c.MaximumSize = new Size(etiqueta, 0);
+            // Las filas de calidades y velocidades se parten a este ancho; sin tope, se quedan partidas al ancho de un acomodo anterior.
+            foreach (var fila in new[] { radiosRes[0].Parent, radiosVel[0].Parent }) fila.MaximumSize = new Size(editorOn ? col : etiqueta, 0);
+        }
+
+        // Debajo del editor, la franja de ajustes mide lo que su contenido, pero a lo más el 30 % del alto (y se desplaza adentro);
+        // el estimado y "Procesar" siempre se ven completos.
+        void AjustarAltoAjustes()
+        {
+            if (!editorOn || cuerpo == null || cuerpo.RowStyles.Count < 2) return;
+            int an = Math.Max(200, marcoAjustes.Width - AnchoFijo - panelAjustes.Padding.Horizontal - 8);
+            int contenido = flujoAjustes.GetPreferredSize(new Size(an, 0)).Height + panelAjustes.Padding.Vertical + 8;
+            int boton = fijoAjustes.GetPreferredSize(new Size(AnchoFijo, 0)).Height + 4;
+            int alto = Math.Max(fBase.Height * 6, Math.Max(Math.Min(contenido, (int)(cuerpo.Height * 0.30)), boton));
+            if (Math.Abs(cuerpo.RowStyles[1].Height - alto) > 2) cuerpo.RowStyles[1].Height = alto;
         }
 
         Label Leyenda(string clave) { return L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, clave); }
@@ -585,6 +724,7 @@ namespace VideoLite
             if (avisoFfmpeg.Visible) avisoFfmpeg.Text = Tx.T("ffmpegFalta");
             foreach (var it in items) EscribirEstado(it);
             if (edLinea != null) edLinea.AccessibleName = Tx.T("edLinea");
+            ActualizarGlobos();
             ResumeLayout(true);
             Refrescar();
             EdPintar();
@@ -642,9 +782,10 @@ namespace VideoLite
         void ActualizarEnlaceEnviarA() { lnkEnviarA.Text = Tx.T(File.Exists(AtajoEnviarA()) ? "quitarEnviarA" : "enviarA"); }
 
         // Crea o quita el acceso "Video Lite" del menú Enviar a (clic derecho en un archivo). Solo en la cuenta del usuario.
-        void AlternarEnviarA()
+        // Antes de crearlo pregunta (sí / no). "lnk": otra ruta para el acceso, solo en las pruebas.
+        void AlternarEnviarA(string lnk = null)
         {
-            string lnk = AtajoEnviarA();
+            lnk = lnk ?? AtajoEnviarA();
             try
             {
                 if (File.Exists(lnk))
@@ -654,6 +795,7 @@ namespace VideoLite
                 }
                 else
                 {
+                    if (MessageBox.Show(this, Tx.T("enviarAConfirm"), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
                     Type tipo = Type.GetTypeFromProgID("WScript.Shell");
                     object shell = Activator.CreateInstance(tipo);
                     object atajo = tipo.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { lnk });

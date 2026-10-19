@@ -238,7 +238,7 @@ namespace VideoLite
         TableLayoutPanel colVideos, edRaiz;
         Panel edCaja;              // se desplaza a lo alto; adentro, edRaiz mide lo que mide su contenido
         Label lblSecVideos, edVacioTxt, edVacioSub, edSinVista, edTiempo, edQueda, edSel, edVolTxt, edNota, edAyuda;
-        Button btnAgregarVideos, btnAgregarCarpeta, edElegir, edPlay, edEmpieza, edTermina, edDesde, edHasta, edQuitar, edSilenciar, edReset, edMenos, edMas;
+        Button btnAgregarVideos, btnAgregarCarpeta, edElegir, edCambiarVideo, edQuitarVideo, edPlay, edEmpieza, edTermina, edDesde, edHasta, edQuitar, edSilenciar, edReset, edMenos, edMas;
         Panel edVisor, edVacio;
         TrackBar edVol;
         NumericUpDown edDes;
@@ -275,11 +275,11 @@ namespace VideoLite
         Control ConstruirEditor()
         {
             edCaja = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = C.Bg, Margin = new Padding(0) };
-            edRaiz = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 8, Margin = new Padding(0), BackColor = C.Bg };
+            edRaiz = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 5, Margin = new Padding(0), BackColor = C.Bg };
             edCaja.Controls.Add(edRaiz);
             edRaiz.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));   // el ancho visible: nunca se desplaza a lo ancho
             edRaiz.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));  // visor: 16:9 del ancho (se ajusta al cambiar de tamaño)
-            for (int i = 1; i < 8; i++) edRaiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            for (int i = 1; i < 5; i++) edRaiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // Visor: el reproductor, o el aviso sin vista previa, o la zona para soltar un video
             edVisor = new Panel { Dock = DockStyle.Fill, BackColor = Color.Black, Margin = new Padding(0, 0, 0, 6), AllowDrop = true };
@@ -300,15 +300,22 @@ namespace VideoLite
             edRaiz.Controls.Add(edVisor, 0, 0);
 
             // Reproducir, tiempo y lo que queda
-            var transporte = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 3, Margin = new Padding(0, 0, 0, 4) };
+            var transporte = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 5, Margin = new Padding(0, 0, 0, 4) };
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             edPlay = Boton("▶", false, (s, e) => EdPlayPausa());
             edPlay.Font = new Font("Segoe UI Symbol", 10f); edPlay.AccessibleName = Tx.T("edReproducir"); edPlay.MinimumSize = new Size(44, 30);
             edTiempo = new Label { AutoSize = true, Font = fChico, ForeColor = C.Ink2, Margin = new Padding(6, 8, 0, 0) };
             edQueda = new Label { AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 0, 0), Anchor = AnchorStyles.Right };
+            edQueda.Margin = new Padding(0, 8, 14, 0);
+            edCambiarVideo = L(Boton("", false, (s, e) => ElegirVideos()), "edCambiarVideo");
+            edQuitarVideo = L(Boton("", false, (s, e) => { if (edItem != null) { lista.SelectedItems.Clear(); edItem.Lv.Selected = true; QuitarSeleccionados(); } }), "edQuitarVideo");
+            edCambiarVideo.Font = edQuitarVideo.Font = fChico;
             transporte.Controls.Add(edPlay, 0, 0); transporte.Controls.Add(edTiempo, 1, 0); transporte.Controls.Add(edQueda, 2, 0);
+            transporte.Controls.Add(edCambiarVideo, 3, 0); transporte.Controls.Add(edQuitarVideo, 4, 0);
             edRaiz.Controls.Add(transporte, 0, 1);
 
             // Línea de tiempo
@@ -338,9 +345,7 @@ namespace VideoLite
             edSilenciar = L(Boton("", false, (s, e) => EdSilenciar()), "edSilenciar");
             foreach (var b in new[] { edDesde, edHasta, edQuitar, edSilenciar }) grupoTramo.Controls.Add(b);
             ops.Controls.Add(grupoRecorte); ops.Controls.Add(grupoTramo);
-            edRaiz.Controls.Add(ops, 0, 4);
             edSel = new Label { AutoSize = true, Font = fChico, ForeColor = C.Ink2, Margin = new Padding(0, 0, 0, 6) };
-            edRaiz.Controls.Add(edSel, 0, 5);
 
             // Volumen y mover el audio
             var audio = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 2) };
@@ -360,12 +365,9 @@ namespace VideoLite
             grupoMover.Controls.Add(new Label { Text = "s", AutoSize = true, Margin = new Padding(0, 8, 6, 0) });
             grupoMover.Controls.Add(edMas);
             audio.Controls.Add(grupoVol); audio.Controls.Add(grupoMover);
-            edRaiz.Controls.Add(audio, 0, 6);
 
             // Cambios, con su "Deshacer"; y la nota de lo que la vista previa no puede mostrar
             var cambios = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0) };
-            var ayudaMover = Ayuda("edMoverAyuda"); ayudaMover.Margin = new Padding(0, 0, 0, 6);
-            cambios.Controls.Add(ayudaMover);
             var cab = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
             cab.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 6, 8, 0) }, "edCambios"));
             edReset = L(Boton("", false, (s, e) => EdDeshacerTodo()), "edDeshacerTodo");
@@ -376,22 +378,55 @@ namespace VideoLite
             cambios.Controls.Add(edLista);
             edNota = Ayuda("edNotaVista");
             cambios.Controls.Add(edNota);
-            edRaiz.Controls.Add(cambios, 0, 7);
+            // Debajo de la línea de tiempo, tres columnas cuando hay ancho (recortar y tramo · audio · cambios), o una debajo de otra.
+            var ayudaMover = Ayuda("edMoverAyuda"); ayudaMover.Margin = new Padding(0, 0, 0, 6);
+            var colOps = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 14, 0) };
+            var colAudio = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 14, 0) };
+            var colCambios = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+            colOps.Controls.Add(ops); colOps.Controls.Add(edSel);
+            colAudio.Controls.Add(audio); colAudio.Controls.Add(ayudaMover);
+            colCambios.Controls.Add(cambios);
+            var controles = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true, WrapContents = true, Margin = new Padding(0) };
+            controles.Controls.Add(colOps); controles.Controls.Add(colAudio); controles.Controls.Add(colCambios);
+            edRaiz.Controls.Add(controles, 0, 4);
             // El ancho manda: el visor mide 16:9 (entre 150 y 320 px de alto), las filas de botones se parten en dos
             // y, si todo no cabe a lo alto, el editor se desplaza (nunca a lo ancho).
-            edCaja.Resize += (s, e) =>
+            EventHandler acomodar = (s, e) =>
             {
                 int an = Math.Max(200, edCaja.ClientSize.Width - 4);
-                edRaiz.RowStyles[0].Height = Math.Max(150, Math.Min(320, an * 9 / 16));
-                foreach (Control c in new Control[] { ops, audio, cambios, grupoRecorte, grupoTramo, grupoVol, grupoMover }) c.MaximumSize = new Size(an, 0);
-                foreach (Control c in new Control[] { edAyuda, edSel, edNota, ayudaMover }) c.MaximumSize = new Size(an, 0);
+                int cols = an >= fBase.Height * 66 ? 3 : 1;          // ~3 columnas de 22 líneas de ancho
+                int col = cols == 1 ? an : an / 3 - 14;
+                controles.MaximumSize = new Size(an, 0);
+                foreach (Control c in new Control[] { colOps, colAudio, colCambios }) { c.MinimumSize = new Size(cols == 1 ? 0 : col, 0); c.MaximumSize = new Size(col, 0); }
+                foreach (Control c in new Control[] { ops, audio, cambios, grupoRecorte, grupoTramo, grupoVol, grupoMover }) c.MaximumSize = new Size(col, 0);
+                foreach (Control c in new Control[] { edSel, edNota, ayudaMover }) c.MaximumSize = new Size(col, 0);
+                edAyuda.MaximumSize = new Size(an, 0);
                 edLinea.Width = an;
+                EdAjustarVisor();
             };
+            edCaja.Resize += acomodar;
+            edCaja.ClientSizeChanged += acomodar;   // también cuando aparece o se va la barra de desplazamiento
 
             edReloj = new System.Windows.Forms.Timer { Interval = 50 };
             edReloj.Tick += (s, e) => EdTick();
             EdPintar();
             return edCaja;
+        }
+
+        // El visor mide 16:9 del ancho, pero nunca más de lo que deja libre el resto del editor (así no hay que desplazarse
+        // para ver la línea de tiempo cuando hay espacio); como mínimo, 150 px.
+        void EdAjustarVisor()
+        {
+            if (edRaiz == null || edCaja == null) return;
+            int an = Math.Max(200, edCaja.ClientSize.Width - 4);
+            int actual = (int)edRaiz.RowStyles[0].Height;
+            int resto = edRaiz.Height - actual;
+            int alto = Math.Max(150, Math.Min(an * 9 / 16, edCaja.ClientSize.Height - resto - 10));   // 10 px de holgura: sin ella, el redondeo saca la barra de desplazamiento
+            if (Math.Abs(alto - actual) <= 2) return;
+            edRaiz.RowStyles[0].Height = alto;
+            // Si el visor se achicó dentro del Resize de la caja, la caja no vuelve a medir y deja la barra de
+            // desplazamiento aunque ya todo quepa: que vuelva a medir en cuanto termine este acomodo.
+            if (edCaja.IsHandleCreated) edCaja.BeginInvoke((Action)(() => edCaja.PerformLayout()));
         }
 
         /* ---------- Activar y desactivar ---------- */
@@ -413,6 +448,10 @@ namespace VideoLite
             editorOn = on;
             btnAgregarCarpeta.Visible = !on;
             CambiarClave(lblSecVideos, on ? "edTitulo" : "secVideos");
+            lblSecVideos.Visible = !on;                    // como en la web: el editor reemplaza "1 · Tus videos"
+            btnAgregarVideos.Parent.Visible = !on;         // cambiar o quitar el video: en la fila de reproducir
+            AcomodoAjustes();          // los ajustes pasan debajo del editor (o vuelven a la derecha)
+            colVideos.PerformLayout();
             AnimarEditor(on);
             if (on) { var it = items.FirstOrDefault(i => i.Info != null); EdCargar(it); edReloj.Start(); }
             else { if (rep != null) rep.Pausa(); edReloj.Stop(); }
@@ -423,7 +462,7 @@ namespace VideoLite
         void AnimarEditor(bool on)
         {
             var filas = colVideos.RowStyles;
-            int alto = colVideos.ClientSize.Height - lblSecVideos.Height - btnAgregarVideos.Parent.Height - 16;
+            int alto = colVideos.ClientSize.Height - (lblSecVideos.Visible ? lblSecVideos.Height : 0) - (btnAgregarVideos.Parent.Visible ? btnAgregarVideos.Parent.Height : 0) - 16;
             int fila = lista.Font.Height * 2 + 22;    // encabezado y una fila
             int desde = on ? Math.Max(fila, lista.Height) : fila, hasta = on ? fila : Math.Max(fila, alto);
             if (edAnim != null) edAnim.Stop();
@@ -669,6 +708,8 @@ namespace VideoLite
             bool hay = edItem != null && !trabajando;
             foreach (Control c in new Control[] { edEmpieza, edTermina, edDesde, edHasta, edVol, edDes, edMenos, edMas, edLinea }) c.Enabled = hay;
             edPlay.Enabled = hay && rep != null;
+            edCambiarVideo.Enabled = !trabajando;
+            edQuitarVideo.Enabled = hay;
             if (edItem == null)
             {
                 edTiempo.Text = ""; edQueda.Text = ""; edSel.Text = ""; edVolTxt.Text = "100 %";
@@ -720,6 +761,7 @@ namespace VideoLite
             }
             edLista.ResumeLayout(true);
             edLinea.Invalidate();
+            EdAjustarVisor();
         }
     }
 }
