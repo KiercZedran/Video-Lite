@@ -10,21 +10,49 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ## Sin publicar
 
-Será la **0.0.2.6**: lo que cambió desde la 0.0.2.5. Al publicar, esta sección recibe su fecha y los datos de los zips.
+Será la **0.0.3**: lo que cambió desde la 0.0.2.6. Al publicar, esta sección recibe su fecha y los datos de los zips.
+
+### Novedades
+
+**App de Windows**
+- **Editor de un video**, igual que el de la web. Se activa con la casilla "Activar editor", que lo despliega en lugar de la lista.
+  - Visor con vista previa con sonido (Reproductor de Windows Media). Al reproducir se saltan los tramos quitados y se callan los silenciados.
+  - Línea de tiempo con miniaturas del video y la forma de onda del audio.
+  - Recortar el inicio y el fin, quitar tramos, silenciar el audio por tramos, el volumen de 0 a 300 % y mover el audio hasta 5 s. Cada cambio se puede deshacer.
+  - El resultado es el mismo que en la web: la app arma el mismo grafo de ffmpeg.
 
 ### Cambios
 
-- **La app de Windows pasa a ser de código abierto,** con licencia GPL-3.0. El código está en [github.com/KiercZedran/Video-Lite](https://github.com/KiercZedran/Video-Lite). Quien lo modifique y lo distribuya tiene que publicar su código con la misma licencia.
-- **La página** dice "Gratis y de código abierto" y enlaza el código.
+- **La página** dice "Gratis y de código abierto", enlaza el código y, en la sección de descarga, que la app trae el mismo editor.
 - **La descarga** apunta siempre a la última versión publicada en GitHub (`VideoLite-win64.zip`), así que el enlace no cambia con cada versión. El número, el SHA-256 y el análisis de VirusTotal de cada versión están en sus notas en GitHub.
-- **El texto de "Licencias"** de la app dice la licencia y dónde está el código.
-- **El `LEEME.txt` y el `README.txt` del zip** explican cómo quitar la app y aclaran que no se conecta a internet.
+- **`ffmpeg.exe`** se recompiló con los filtros del editor (`split`, `asplit`, `concat`, `asetpts`, `apad`, `adelay` y `volume`) y con salida cruda para las miniaturas y la forma de onda. Las fuentes son las mismas.
+- **Los textos de la app y del zip** usan comillas rectas, y las propiedades del programa dicen Zedran Labs como autor.
 - Revisión de gramática.
 
 ### Eliminado
 
-- **El EULA de la app** (`EULA.txt` y `EULA-en.txt`), que la declaraba de código cerrado. Lo reemplaza `LICENSE.txt` (GPL-3.0) dentro del zip.
 - **De la página:** el número de versión, el SHA-256 y el tamaño del zip, que ahora están en GitHub. La página tampoco aloja ya los zips.
+
+---
+
+## 0.0.2.6 - 2026-10-16 - publicada en GitHub
+
+Primera versión de código abierto. Solo cambió la app de Windows: la página siguió con la 0.0.2.5.
+
+| Descarga | Tamaño | SHA-256 |
+|---|---|---|
+| `VideoLite-0.0.2.6-win64.zip` | 7 194 815 B | `589165aa034571131f8b391c2989f6f78b26049dac4903ed81ef661701bd38c5` |
+| `VideoLite-0.0.2.6-ffmpeg-fuentes.zip` | 17 155 871 B | `c7d36ba440c4bd216cc7027ac8828800474f993240cc3f3f336ef15605f027c2` |
+
+### Cambios
+
+- **La app de Windows pasa a ser de código abierto,** con licencia GPL-3.0. El código está en [github.com/KiercZedran/Video-Lite](https://github.com/KiercZedran/Video-Lite). Quien lo modifique y lo distribuya tiene que publicar su código con la misma licencia.
+- **El texto de "Licencias"** de la app dice la licencia y dónde está el código.
+- **El `LEEME.txt` y el `README.txt` del zip** explican cómo quitar la app y aclaran que no se conecta a internet.
+
+### Eliminado
+
+- **El EULA de la app** (`EULA.txt` y `EULA-en.txt`), que la declaraba de código cerrado. Lo reemplaza `LICENSE.txt` (GPL-3.0) dentro del zip.
 
 ---
 

@@ -1,6 +1,6 @@
 // Video Lite · Zedran Labs — ventana principal (WinForms, .NET Framework 4.8, C# 5).
 // Colores = tokens de sitio/styles.css (paleta del Comparador antes/después), en tema claro y oscuro.
-// Textos en Textos.cs (español e inglés, se cambian en vivo).
+// Textos en Textos.cs (español e inglés, se cambian en vivo). El editor de un video está en Editor.cs.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,16 +17,16 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Video Lite")]
 [assembly: AssemblyProduct("Video Lite · by Zedran Labs")]
 [assembly: AssemblyCompany("Zedran Labs")]
-[assembly: AssemblyCopyright("Erick Hernández · Zedran Labs")]
-[assembly: AssemblyVersion("0.0.2.6")]
-[assembly: AssemblyFileVersion("0.0.2.6")]
+[assembly: AssemblyCopyright("Zedran Labs")]
+[assembly: AssemblyVersion("0.0.3")]
+[assembly: AssemblyFileVersion("0.0.3")]
 
 namespace VideoLite
 {
     // Mismos valores que :root y :root[data-theme="dark"] de sitio/styles.css (contraste verificado con herramientas/contraste.py).
     static class C
     {
-        public const string Version = "0.0.2.6";   // v0.0.2.x hasta publicar la versión de arreglos (Erick, 2026-10-14)
+        public const string Version = "0.0.3";
         public static Color Bg, Surface, Surface2, Line, LineStrong, Ink, Ink2, Ink3, Accent, AccentText, AccentSoft, Amber, AmberSoft, Danger;
         public static bool Oscuro;
         static C() { Aplicar(false); }
@@ -197,9 +197,10 @@ namespace VideoLite
         public string Salida, Error, Nota;
         public bool NoCupo;
         public double Segundos;
+        public Edicion Ed;                     // edición del editor (cuenta solo con el editor activo)
     }
 
-    public class Ventana : Form
+    public partial class Ventana : Form
     {
         static readonly CultureInfo CI = CultureInfo.InvariantCulture;
         readonly Ajustes aj = new Ajustes();
@@ -267,7 +268,8 @@ namespace VideoLite
             DragEnter += AlArrastrar;
             DragDrop += AlSoltar;
 
-            var raiz = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Padding = new Padding(20, 12, 20, 8), BackColor = C.Bg };
+            var raiz = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(20, 12, 20, 8), BackColor = C.Bg };
+            raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             raiz.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -291,10 +293,19 @@ namespace VideoLite
             avisoFfmpeg = new Label { AutoSize = true, ForeColor = C.Ink, BackColor = C.AmberSoft, Padding = new Padding(10, 6, 10, 6), Margin = new Padding(0, 0, 0, 8), Visible = false, MaximumSize = new Size(2000, 0) };
             raiz.Controls.Add(avisoFfmpeg, 0, 1);
 
+            // "Activar editor": antes de los controles, como en la web; despliega el editor en lugar de la lista
+            var filaEditor = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };
+            chkEditor = L(new Casilla { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 8, 0) }, "edActivar");
+            chkEditor.CheckedChanged += (s, e) => AlternarEditor();
+            filaEditor.Controls.Add(chkEditor);
+            var ayudaEditor = Ayuda("edActivarAyuda"); ayudaEditor.Margin = new Padding(0, 3, 0, 0);
+            filaEditor.Controls.Add(ayudaEditor);
+            raiz.Controls.Add(filaEditor, 0, 2);
+
             var cuerpo = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = new Padding(0) };
             cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 57));
             cuerpo.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 43));
-            raiz.Controls.Add(cuerpo, 0, 2);
+            raiz.Controls.Add(cuerpo, 0, 3);
             cuerpo.Controls.Add(ConstruirVideos(), 0, 0);
             cuerpo.Controls.Add(ConstruirAjustes(), 1, 0);
 
@@ -310,7 +321,7 @@ namespace VideoLite
             pie.Controls.Add(L(Enlace(null, (s, e) => MostrarLicencias()), "licencias"));
             lnkEnviarA = Enlace(null, (s, e) => AlternarEnviarA());
             pie.Controls.Add(lnkEnviarA);
-            raiz.Controls.Add(pie, 0, 3);
+            raiz.Controls.Add(pie, 0, 4);
 
             actualizando = true; tam.Value = 25; actualizando = false;
             ActualizarEnlaceEnviarA();
@@ -351,15 +362,20 @@ namespace VideoLite
 
         Control ConstruirVideos()
         {
-            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(0, 0, 12, 0) };
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = new Padding(0, 0, 12, 0) };
+            colVideos = t;
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            t.Controls.Add(L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 6) }, "secVideos"), 0, 0);
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));   // el editor, plegado
+            lblSecVideos = L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 6) }, "secVideos");
+            t.Controls.Add(lblSecVideos, 0, 0);
 
             var botones = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 6) };
-            botones.Controls.Add(L(Boton("", false, (s, e) => ElegirVideos()), "agregarVideos"));
-            botones.Controls.Add(L(Boton("", false, (s, e) => ElegirCarpeta()), "agregarCarpeta"));
+            btnAgregarVideos = L(Boton("", false, (s, e) => ElegirVideos()), "agregarVideos");
+            btnAgregarCarpeta = L(Boton("", false, (s, e) => ElegirCarpeta()), "agregarCarpeta");
+            botones.Controls.Add(btnAgregarVideos);
+            botones.Controls.Add(btnAgregarCarpeta);
             botones.Controls.Add(L(Boton("", false, (s, e) => QuitarSeleccionados()), "quitarSel"));
             botones.Controls.Add(L(Boton("", false, (s, e) => Limpiar()), "limpiar"));
             t.Controls.Add(botones, 0, 1);
@@ -386,6 +402,9 @@ namespace VideoLite
             var vacio = L(new Label { ForeColor = C.Ink3, AutoSize = true, BackColor = C.Surface, Tag = "vacio" }, "vacio");
             lista.Controls.Add(vacio);
             vacio.Location = new Point(16, 40);
+            var editor = ConstruirEditor();
+            editor.Visible = false;
+            t.Controls.Add(editor, 0, 3);
             return t;
         }
 
@@ -565,8 +584,10 @@ namespace VideoLite
             ActualizarEnlaceEnviarA();
             if (avisoFfmpeg.Visible) avisoFfmpeg.Text = Tx.T("ffmpegFalta");
             foreach (var it in items) EscribirEstado(it);
+            if (edLinea != null) edLinea.AccessibleName = Tx.T("edLinea");
             ResumeLayout(true);
             Refrescar();
+            EdPintar();
             lista.Invalidate();
         }
 
@@ -585,6 +606,7 @@ namespace VideoLite
             Preferencias.Set("tema", C.Oscuro ? "oscuro" : "claro");
             AplicarDetallesWindows();
             Refrescar();
+            EdPintar();
             Invalidate(true);
         }
 
@@ -610,15 +632,16 @@ namespace VideoLite
             Win.TituloOscuro(this, C.Oscuro);
             if (lista != null) Win.Barras(lista, C.Oscuro);
             if (panelAjustes != null) Win.Barras(panelAjustes, C.Oscuro);
+            if (edCaja != null) Win.Barras(edCaja, C.Oscuro);
         }
 
-        /* ---------- «Enviar a» de Windows ---------- */
+        /* ---------- "Enviar a" de Windows ---------- */
 
         static string AtajoEnviarA() { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.SendTo), "Video Lite.lnk"); }
 
         void ActualizarEnlaceEnviarA() { lnkEnviarA.Text = Tx.T(File.Exists(AtajoEnviarA()) ? "quitarEnviarA" : "enviarA"); }
 
-        // Crea o quita el acceso «Video Lite» del menú Enviar a (clic derecho en un archivo). Solo en la cuenta del usuario.
+        // Crea o quita el acceso "Video Lite" del menú Enviar a (clic derecho en un archivo). Solo en la cuenta del usuario.
         void AlternarEnviarA()
         {
             string lnk = AtajoEnviarA();
@@ -673,7 +696,7 @@ namespace VideoLite
 
         void ElegirVideos()
         {
-            using (var d = new OpenFileDialog { Multiselect = true, Title = Tx.T("elegirVideos"), Filter = Tx.T("filtroVideos") + "|*" + string.Join(";*", Ext) + "|" + Tx.T("filtroTodos") + "|*.*" })
+            using (var d = new OpenFileDialog { Multiselect = !editorOn, Title = Tx.T("elegirVideos"), Filter = Tx.T("filtroVideos") + "|*" + string.Join(";*", Ext) + "|" + Tx.T("filtroTodos") + "|*.*" })
                 if (d.ShowDialog(this) == DialogResult.OK) Agregar(d.FileNames);
         }
 
@@ -692,6 +715,18 @@ namespace VideoLite
         void Agregar(IEnumerable<string> rutas)
         {
             if (trabajando) return;
+            if (editorOn)
+            {
+                // El editor trabaja con un video a la vez: el primero reemplaza al que estaba (con aviso si tenía cambios).
+                var validos = rutas.Where(a => File.Exists(a) && Ext.Contains(Path.GetExtension(a).ToLowerInvariant())).ToList();
+                if (validos.Count == 0) return;
+                if (items.Count > 0 && string.Equals(items[0].Ruta, validos[0], StringComparison.OrdinalIgnoreCase)) return;
+                if (items.Count > 0 && EdicionPendiente(items[0]) &&
+                    MessageBox.Show(this, Tx.T("edPerder", Path.GetFileName(items[0].Ruta)), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+                items.Clear(); lista.Items.Clear(); EdCargar(null);
+                if (validos.Count > 1 || rutas.Count() > 1) { estadoFinal = Tx.T("edUnArchivo"); estado.Text = estadoFinal; }
+                rutas = new[] { validos[0] };
+            }
             var nuevos = new List<Item>();
             foreach (string r in rutas)
             {
@@ -725,6 +760,7 @@ namespace VideoLite
                         cap.Info = info;
                         cap.Estado = info == null ? "error" : "listo";
                         if (info == null) cap.Error = Tx.T("noLegible");
+                        if (editorOn && items.Count > 0 && items[0] == cap && info != null) EdCargar(cap);
                         if (auto) AplicarAuto(); else Refrescar();
                     }));
                 }
@@ -734,14 +770,20 @@ namespace VideoLite
         void QuitarSeleccionados()
         {
             if (trabajando) return;
-            foreach (ListViewItem lv in lista.SelectedItems.Cast<ListViewItem>().ToList()) { items.Remove((Item)lv.Tag); lista.Items.Remove(lv); }
+            var sel = lista.SelectedItems.Cast<ListViewItem>().ToList();
+            var conCambios = sel.Select(lv => (Item)lv.Tag).FirstOrDefault(EdicionPendiente);
+            if (conCambios != null && MessageBox.Show(this, Tx.T("edPerder", Path.GetFileName(conCambios.Ruta)), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            foreach (ListViewItem lv in sel) { items.Remove((Item)lv.Tag); lista.Items.Remove(lv); if (lv.Tag == edItem) EdCargar(null); }
             if (auto) AplicarAuto(); else Refrescar();
         }
 
         void Limpiar()
         {
             if (trabajando) return;
+            var conCambios = items.FirstOrDefault(EdicionPendiente);
+            if (conCambios != null && MessageBox.Show(this, Tx.T("edPerder", Path.GetFileName(conCambios.Ruta)), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             items.Clear(); lista.Items.Clear(); btnAbrir.Visible = false; estado.Text = ""; estadoFinal = null;
+            EdCargar(null);
             if (auto) AplicarAuto(); else Refrescar();
         }
 
@@ -782,7 +824,7 @@ namespace VideoLite
         {
             var listos = items.Where(i => i.Info != null).ToList();
             actualizando = true; cbDestino.SelectedIndex = DEST_AUTO; actualizando = false;
-            PonerTam(listos.Count > 0 ? listos.Max(i => Motor.RecomendarMB(i.Info, i.Size, aj)) : 25, false);
+            PonerTam(listos.Count > 0 ? listos.Max(i => Motor.RecomendarMB(i.Info, i.Size, aj, EdicionDe(i) != null ? i.Ed.Duracion() : i.Info.Dur)) : 25, false);
         }
 
         void Cambio() { if (auto) AplicarAuto(); else Refrescar(); }
@@ -796,7 +838,7 @@ namespace VideoLite
             return h > 0 ? string.Format("{0} h {1:00} min", h, m) : m > 0 ? string.Format("{0} min {1:00} s", m, x) : x + " s";
         }
 
-        // Texto de la columna «Estado» de un video ya procesado (se reescribe al cambiar de idioma).
+        // Texto de la columna "Estado" de un video ya procesado (se reescribe al cambiar de idioma).
         void EscribirEstado(Item it)
         {
             if (it.Estado == "error") { it.Lv.SubItems[4].Text = it.Error; return; }
@@ -829,13 +871,16 @@ namespace VideoLite
                     sub[1].Text = Mb(it.Size) + " · " + Dur(it.Info.Dur) + " · " + it.Info.W + "×" + it.Info.H + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
                 if (it.Estado == "error") { sub[4].Text = it.Error; it.Lv.ForeColor = C.Danger; continue; }
                 if (it.Estado == "hecho" || it.Estado == "trabajando" || it.Info == null) continue;
-                it.Plan = Motor.Planear(it.Info, it.Size, aj);
+                var ed = EdicionDe(it);
+                it.Plan = Motor.Planear(it.Info, it.Size, aj, ed != null ? ed.Duracion() : it.Info.Dur);
+                it.Plan.Ed = ed != null ? ed.Copia() : null;    // una copia: el hilo de compresión no ve los cambios a medias
+                bool dura = aj.Speed != 1 || ed != null;
                 if (it.Plan.SoloAudio)
                 {
                     if (it.Plan.SinPistaAudio) { sub[2].Text = "—"; sub[3].Text = Tx.T("sinPista"); sub[4].Text = ""; alguno = true; continue; }
                     sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
                     sub[3].Text = Tx.T("soloAudio", aj.Formato.ToUpperInvariant());
-                    sub[4].Text = Tx.T("porComprimir", aj.Formato.ToUpperInvariant()) + (aj.Speed != 1 ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
+                    sub[4].Text = Tx.T("porComprimir", aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
                     it.Lv.ForeColor = C.Ink;
                     antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                     continue;
@@ -844,7 +889,7 @@ namespace VideoLite
                 int nivel;
                 sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
                 sub[3].Text = Motor.Calidad(it.Plan, out nivel);
-                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "×" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (aj.Speed != 1 ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
+                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "×" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
                 it.Lv.ForeColor = C.Ink;
                 antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                 if (peor == null || it.Plan.Bpp < peor.Bpp) peor = it.Plan;
@@ -887,6 +932,7 @@ namespace VideoLite
             btnIr.BackColor = btnIr.Enabled ? C.Accent : C.Surface2;
             btnIr.ForeColor = btnIr.Enabled ? Color.White : C.Ink3;
             btnIr.Text = trabajando ? Tx.T("comprimiendo") : pendientes > 1 ? Tx.T("comprimirN", pendientes) : Tx.T("comprimir");
+            chkEditor.Enabled = !trabajando;
             AjustarColumnas();
         }
 
@@ -910,7 +956,9 @@ namespace VideoLite
             if (cola.Count == 0) return;
             trabajando = true; Motor.Cancelado = false; estadoFinal = null;
             btnCancelar.Visible = true; btnAbrir.Visible = false; progreso.Visible = true; progreso.Value = 0;
+            if (rep != null) rep.Pausa();
             Refrescar();
+            EdPintar();
             var ajCopia = new Ajustes { TargetMB = aj.TargetMB, Res = aj.Res, Speed = aj.Speed, Fix = aj.Fix, Voz = aj.Voz, Formato = aj.Formato, Rotacion = aj.Rotacion, SinAudio = aj.SinAudio };
             bool junto = chkJunto.Checked; string carpeta = txtCarpeta.Text;
             var reloj = Stopwatch.StartNew();
@@ -977,6 +1025,7 @@ namespace VideoLite
                     btnAbrir.Visible = hechos > 0;
                     estadoFinal = Motor.Cancelado ? Tx.T("cancelado") : Tx.T("listoFin", hechos, cola.Count, Dur(totalSeg));
                     Refrescar();
+                    EdPintar();
                     if (!Motor.Cancelado) AvisarFin(hechos, cola.Count);
                 }));
             });
@@ -1005,7 +1054,13 @@ namespace VideoLite
 
         void AlCerrar(object s, FormClosingEventArgs e)
         {
-            if (!trabajando) return;
+            if (!trabajando)
+            {
+                var conCambios = items.FirstOrDefault(EdicionPendiente);
+                if (conCambios != null && MessageBox.Show(this, Tx.T("edPerder", Path.GetFileName(conCambios.Ruta)), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) e.Cancel = true;
+                if (!e.Cancel && rep != null) rep.Cerrar();
+                return;
+            }
             if (MessageBox.Show(this, Tx.T("cerrarConfirm"), "Video Lite", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.No) e.Cancel = true;
             else Motor.Cancelar();
         }
@@ -1032,7 +1087,7 @@ namespace VideoLite
 
     static class Programa
     {
-        // Los argumentos son archivos o carpetas (los manda el menú «Enviar a» o se arrastran sobre el .exe).
+        // Los argumentos son archivos o carpetas (los manda el menú "Enviar a" o se arrastran sobre el .exe).
         [STAThread]
         static void Main(string[] args)
         {

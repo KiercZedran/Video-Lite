@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -27,7 +28,7 @@ namespace VideoLite
         public int Res;          // 0 = original; si no, lado corto máximo
         public double Speed = 1;
         public bool Fix = true;
-        public bool Voz;                 // «Mejorar voz»
+        public bool Voz;                 // "Mejorar voz"
         public string Formato = "mp4";   // mp4 | mov | mkv | mp3 | m4a (estos dos: solo audio)
         public string Rotacion = "";     // "" | 90 | 270 | 180 | h | v
         public bool SinAudio;
@@ -43,6 +44,64 @@ namespace VideoLite
         public string Preset;
         public bool SoloAudio, SinPistaAudio, HasAudio;
         public int OW, OH;                  // tamaño de salida ya girado (90/270 intercambian ancho y alto)
+        public Edicion Ed;                  // edición del editor, o null (como "ed" en sitio/plan.js)
+    }
+
+    // Edición del editor: el mismo modelo que sitio/editor.js (INVARIANTES 30). Nunca toca el original:
+    // describe qué se conserva, qué se silencia, el volumen y el desfase, en segundos sobre el video original.
+    public class Edicion
+    {
+        public const double MinTramo = 0.1;   // s: un tramo más corto no tiene sentido y complica la concatenación
+        public double Dur, Entrada, Salida;
+        public List<double[]> Cortes = new List<double[]>(), Silencios = new List<double[]>();
+        public double Volumen = 1, Desfase = 0;
+
+        public static Edicion Vacia(double dur) { return new Edicion { Dur = dur, Entrada = 0, Salida = dur }; }
+        public Edicion Copia()
+        {
+            return new Edicion { Dur = Dur, Entrada = Entrada, Salida = Salida, Volumen = Volumen, Desfase = Desfase,
+                Cortes = Cortes.Select(x => new[] { x[0], x[1] }).ToList(), Silencios = Silencios.Select(x => new[] { x[0], x[1] }).ToList() };
+        }
+        // Junta rangos que se tocan o se enciman (unir en editor.js).
+        public static List<double[]> Unir(IEnumerable<double[]> rangos)
+        {
+            var r = rangos.Where(x => x[1] - x[0] > 1e-3).Select(x => new[] { x[0], x[1] }).OrderBy(x => x[0]).ToList();
+            var o = new List<double[]>();
+            foreach (var x in r)
+            {
+                if (o.Count > 0 && x[0] <= o[o.Count - 1][1] + 1e-3) o[o.Count - 1][1] = Math.Max(o[o.Count - 1][1], x[1]);
+                else o.Add(x);
+            }
+            return o;
+        }
+        // Lo que queda del video: [Entrada, Salida] menos los tramos quitados.
+        public List<double[]> Tramos()
+        {
+            var t = new List<double[]>();
+            double a = Entrada;
+            foreach (var c in Unir(Cortes))
+            {
+                if (c[1] <= a || c[0] >= Salida) continue;
+                if (c[0] - a >= MinTramo) t.Add(new[] { a, Math.Min(c[0], Salida) });
+                a = Math.Max(a, c[1]);
+            }
+            if (Salida - a >= MinTramo) t.Add(new[] { a, Salida });
+            return t;
+        }
+        public double Duracion() { return Tramos().Sum(x => x[1] - x[0]); }
+        public bool HayCambios()
+        {
+            return Entrada > 0.01 || Salida < Dur - 0.01 || Cortes.Count > 0 || Silencios.Count > 0 || Math.Abs(Volumen - 1) > 0.001 || Math.Abs(Desfase) > 0.0005;
+        }
+    }
+
+    // El grafo de ffmpeg de una edición: lo mismo que grafoEdicion en sitio/grafo.js, carácter por carácter
+    // (herramientas/paridad-edicion.mjs lo compara).
+    public class Grafo
+    {
+        public string[] Leer;               // -t: hasta dónde hace falta leer el original
+        public Func<string, string> Video;  // vf (filtros de siempre) → grafo con salida [vout]
+        public Func<string, string> Audio;  // af → grafo con salida [aout]
     }
 
     public static class Motor
@@ -168,7 +227,7 @@ namespace VideoLite
         }
 
         // Canales en fase invertida (L = −R): al mezclarlos se cancelan y queda silencio.
-        // Devuelve null si no se pudo medir; quien llama debe tratarlo como «puede estar invertido».
+        // Devuelve null si no se pudo medir; quien llama debe tratarlo como "puede estar invertido".
         public static bool? FaseInvertida(string path, double dur)
         {
             string ss = Math.Max(0, Math.Floor(dur / 3)).ToString(CI);
@@ -192,10 +251,13 @@ namespace VideoLite
 
         /* ---------- Plan ---------- */
 
-        public static Plan Planear(InfoVideo m, long size, Ajustes a)
+        public static Plan Planear(InfoVideo m, long size, Ajustes a) { return Planear(m, size, a, m.Dur); }
+
+        // dur: la duración que se comprime (tras el editor). El tope del 90 % sigue usando el bitrate del original completo.
+        public static Plan Planear(InfoVideo m, long size, Ajustes a, double dur)
         {
             var p = new Plan();
-            p.OutDur = m.Dur / a.Speed;
+            p.OutDur = dur / a.Speed;
             if (a.SoloAudio)
             {
                 // Solo audio: calidad fija (MP3 192 kbps, M4A/AAC 160 kbps); el tamaño depende de la duración.
@@ -247,14 +309,16 @@ namespace VideoLite
             return p;
         }
 
-        public static double RecomendarMB(InfoVideo m, long size, Ajustes a)
+        public static double RecomendarMB(InfoVideo m, long size, Ajustes a) { return RecomendarMB(m, size, a, m.Dur); }
+
+        public static double RecomendarMB(InfoVideo m, long size, Ajustes a, double dur)
         {
             double w = m.W, h = m.H, sh = Math.Min(w, h);
             if (a.Res > 0 && sh > a.Res) { double k = a.Res / sh; w *= k; h *= k; }
             double fps = Math.Min(m.Fps > 0 ? m.Fps : 30, 60);
             double vK = 0.08 * w * h * fps / 1000;
             double total = vK + (m.HasAudio && !a.SinAudio ? 128 : 0);
-            double mb = total * (m.Dur / a.Speed) / 8000;
+            double mb = total * (dur / a.Speed) / 8000;
             return Math.Max(1, Math.Min(Math.Round(mb, MidpointRounding.AwayFromZero), Math.Max(1, Math.Round(size / 1e6 * 0.8, MidpointRounding.AwayFromZero))));
         }
 
@@ -271,7 +335,7 @@ namespace VideoLite
 
         /* ---------- Compresión ---------- */
 
-        // Menos de 1 MB se muestra en KB: «0.0 MB» o «0.03 MB → 0.03 MB» confunden. Igual que fmtMB en app.js.
+        // Menos de 1 MB se muestra en KB: "0.0 MB" o "0.03 MB → 0.03 MB" confunden. Igual que fmtMB en app.js.
         public static string Tam(double bytes)
         {
             if (bytes < 1e6) return Math.Round(bytes / 1e3).ToString(CI) + " KB";
@@ -286,8 +350,53 @@ namespace VideoLite
             return c;
         }
 
-        // «Mejorar voz»: la misma cadena que sitio/app.js (INVARIANTES 19). Quita el zumbido grave, baja el ruido y empareja el volumen.
+        // "Mejorar voz": la misma cadena que sitio/app.js (INVARIANTES 19). Quita el zumbido grave, baja el ruido y empareja el volumen.
         public const string Voz = "highpass=f=80,afftdn=nf=-25,dynaudnorm=f=200:g=15";
+
+        // Como n3 en grafo.js: hasta 3 decimales, sin ceros de más ("2", "2.5", "0.3").
+        static string N3(double x) { return (Math.Round(x * 1000, MidpointRounding.AwayFromZero) / 1000).ToString("0.###", CI); }
+
+        // Ambos flujos empiezan en 0, se recortan los tramos que se conservan y se unen con concat; después van los filtros
+        // de siempre (vf/af). En el audio, antes de recortar: desfase (adelay o atrim), relleno hasta la duración (apad),
+        // volumen y silencios. Igual que grafoEdicion en sitio/grafo.js.
+        public static Grafo GrafoEdicion(List<double[]> tr, List<double[]> silencios, double volumen, double desfase, double dur)
+        {
+            int n = tr.Count;
+            Func<string, string, string, string, string> unir = (pre, tipo, sufijo, salida) =>
+            {
+                bool v = tipo == "v";
+                string trim = v ? "trim" : "atrim", pts = v ? "setpts=PTS-STARTPTS" : "asetpts=PTS-STARTPTS";
+                string fin = string.IsNullOrEmpty(sufijo) ? "" : "," + sufijo;
+                if (n == 1) return pre + "," + trim + "=start=" + N3(tr[0][0]) + ":end=" + N3(tr[0][1]) + "," + pts + fin + "[" + salida + "]";
+                var partes = new List<string>();
+                var sp = new StringBuilder(pre + "," + (v ? "split" : "asplit") + "=" + n);
+                for (int i = 0; i < n; i++) sp.Append("[" + tipo + "s" + i + "]");
+                partes.Add(sp.ToString());
+                for (int i = 0; i < n; i++)
+                    partes.Add("[" + tipo + "s" + i + "]" + trim + "=start=" + N3(tr[i][0]) + ":end=" + N3(tr[i][1]) + "," + pts + "[" + tipo + "t" + i + "]");
+                var cc = new StringBuilder();
+                for (int i = 0; i < n; i++) cc.Append("[" + tipo + "t" + i + "]");
+                cc.Append("concat=n=" + n + ":v=" + (v ? 1 : 0) + ":a=" + (v ? 0 : 1) + fin + "[" + salida + "]");
+                partes.Add(cc.ToString());
+                return string.Join(";", partes);
+            };
+            // Hasta dónde leer: el final del último tramo, más lo que el audio se adelantó (atrim) y medio segundo de margen.
+            double finLectura = tr.Max(x => x[1]) + Math.Max(0, -desfase) + 0.5;
+            var g = new Grafo();
+            g.Leer = finLectura < dur ? new[] { "-t", N3(finLectura) } : new string[0];
+            g.Video = vf => unir("[0:v]setpts=PTS-STARTPTS", "v", vf, "vout");
+            g.Audio = af =>
+            {
+                var f = new List<string> { "asetpts=PTS-STARTPTS" };
+                if (desfase > 0) f.Add("adelay=delays=" + Math.Round(desfase * 1000, MidpointRounding.AwayFromZero).ToString(CI) + ":all=1");
+                if (desfase < 0) { f.Add("atrim=start=" + N3(-desfase)); f.Add("asetpts=PTS-STARTPTS"); }
+                f.Add("apad=whole_dur=" + N3(dur));
+                if (volumen != 1) f.Add("volume=" + N3(volumen));
+                foreach (var s in silencios) f.Add("volume=enable='between(t," + N3(s[0]) + "," + N3(s[1]) + ")':volume=0");
+                return unir("[0:a]" + string.Join(",", f), "a", af, "aout");
+            };
+            return g;
+        }
 
         // Filtro de giro/volteo (se aplica después de escalar).
         static string FiltroGiro(string r)
@@ -337,12 +446,18 @@ namespace VideoLite
                 string sp = a.Speed.ToString(CI);
                 if (a.Voz) af.Add(Voz);   // después del arreglo de fase y antes del cambio de velocidad
                 if (a.Speed != 1) af.Add("atempo=" + sp);
+                // Con edición, los mismos filtros van dentro de un grafo que primero recorta y une los tramos (como en la web).
+                Grafo g = p.Ed != null && p.Ed.HayCambios() ? GrafoEdicion(p.Ed.Tramos(), Edicion.Unir(p.Ed.Silencios), p.Ed.Volumen, p.Ed.Desfase, m.Dur) : null;
+                string[] leer = g != null ? g.Leer : new string[0];
                 var errs0 = new List<string>();
                 if (p.SoloAudio)
                 {
                     // Solo audio: una pasada, calidad fija.
-                    var aa = new List<string> { "-hide_banner", "-nostats", "-progress", "pipe:1", "-i", input, "-vn", "-map", "0:a:0" };
-                    if (af.Count > 0) aa.AddRange(new[] { "-af", string.Join(",", af) });
+                    var aa = new List<string> { "-hide_banner", "-nostats", "-progress", "pipe:1" };
+                    aa.AddRange(leer);
+                    aa.AddRange(new[] { "-i", input, "-vn" });
+                    if (g != null) aa.AddRange(new[] { "-filter_complex", g.Audio(string.Join(",", af)), "-map", "[aout]" });
+                    else { aa.AddRange(new[] { "-map", "0:a:0" }); if (af.Count > 0) aa.AddRange(new[] { "-af", string.Join(",", af) }); }
                     if (ext == "mp3") aa.AddRange(new[] { "-c:a", "libmp3lame", "-b:a", "192k" });
                     else aa.AddRange(new[] { "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart" });
                     aa.AddRange(new[] { "-map_metadata", "-1", "-y", parcial });
@@ -365,8 +480,22 @@ namespace VideoLite
                 vf.Add("fps=" + p.Fps.ToString(CI));
                 vf.Add("format=yuv420p");
 
-                Func<int, List<string>> common = vk => new List<string> { "-hide_banner", "-nostats", "-progress", "pipe:1", "-i", input, "-map", "0:v:0", "-vf", string.Join(",", vf),
-                    "-c:v", "libx264", "-preset", p.Preset, "-profile:v", "high", "-b:v", vk + "k", "-map_metadata", "-1", "-passlogfile", passlog };
+                // conAudio: en la pasada 2, el grafo de la edición también lleva el audio.
+                Func<int, bool, List<string>> common = (vk, conAudio) =>
+                {
+                    var l = new List<string> { "-hide_banner", "-nostats", "-progress", "pipe:1" };
+                    l.AddRange(leer);
+                    l.AddRange(new[] { "-i", input });
+                    if (g != null)
+                    {
+                        string vfs = string.Join(",", vf);
+                        l.AddRange(new[] { "-filter_complex", conAudio ? g.Video(vfs) + ";" + g.Audio(string.Join(",", af)) : g.Video(vfs), "-map", "[vout]" });
+                        if (conAudio) l.AddRange(new[] { "-map", "[aout]" });
+                    }
+                    else l.AddRange(new[] { "-map", "0:v:0", "-vf", string.Join(",", vf) });
+                    l.AddRange(new[] { "-c:v", "libx264", "-preset", p.Preset, "-profile:v", "high", "-b:v", vk + "k", "-map_metadata", "-1", "-passlogfile", passlog });
+                    return l;
+                };
 
                 var errs = new List<string>();
                 Action<string> err = l => { lock (errs) { errs.Add(l); if (errs.Count > 200) errs.RemoveAt(0); } };
@@ -379,7 +508,7 @@ namespace VideoLite
                     progreso(b + wgt * f, label + " · " + Math.Round(f * 100) + " %");
                 };
 
-                var a1 = common(p.VK); a1.AddRange(new[] { "-pass", "1", "-an", "-f", "null", "NUL" });
+                var a1 = common(p.VK, false); a1.AddRange(new[] { "-pass", "1", "-an", "-f", "null", "NUL" });
                 progreso(0.01, Tx.T("pasada1Ini"));
                 int code = Ejecutar(a1, err, prog(0, 0.3, Tx.T("pasada1")));
                 if (Cancelado) throw new OperationCanceledException();
@@ -391,12 +520,13 @@ namespace VideoLite
                 long bytes = 0;
                 for (int intento = 1; ; intento++)
                 {
-                    var a2 = common(vK); a2.AddRange(new[] { "-pass", "2" });
+                    var a2 = common(vK, p.HasAudio); a2.AddRange(new[] { "-pass", "2" });
                     if (p.HasAudio)
                     {
-                        a2.AddRange(new[] { "-map", "0:a:0", "-c:a", "aac", "-b:a", p.AK + "k" });
+                        if (g == null) a2.AddRange(new[] { "-map", "0:a:0" });
+                        a2.AddRange(new[] { "-c:a", "aac", "-b:a", p.AK + "k" });
                         if (mono) a2.AddRange(new[] { "-ac", "1" });
-                        if (af.Count > 0) a2.AddRange(new[] { "-af", string.Join(",", af) });
+                        if (g == null && af.Count > 0) a2.AddRange(new[] { "-af", string.Join(",", af) });
                     }
                     else a2.Add("-an");
                     if (ext != "mkv") a2.AddRange(new[] { "-movflags", "+faststart" });   // MKV no usa movflags
@@ -422,6 +552,74 @@ namespace VideoLite
                 foreach (string f in new[] { passlog + "-0.log", passlog + "-0.log.mbtree", passlog + "-0.log.temp", passlog + "-0.log.mbtree.temp" })
                     try { if (File.Exists(f)) File.Delete(f); } catch (Exception) { }
             }
+        }
+
+        /* ---------- Editor: miniaturas y forma de onda ---------- */
+
+        // Corre ffmpeg y devuelve su salida estándar en binario (cuadros o muestras crudas). null si no salió nada.
+        // No pasa por "actual": Cancelar() detiene la compresión, no las vistas del editor.
+        public static byte[] EjecutarBytes(IList<string> args, long maxBytes)
+        {
+            var psi = new ProcessStartInfo(Ffmpeg);
+            var parts = new List<string>();
+            foreach (string a in args) parts.Add(Quote(a));
+            psi.Arguments = string.Join(" ", parts);
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
+            psi.RedirectStandardInput = true;
+            using (var p = new Process())
+            {
+                p.StartInfo = psi;
+                p.ErrorDataReceived += (s, e) => { };
+                p.Start();
+                p.BeginErrorReadLine();
+                var ms = new MemoryStream();
+                var buf = new byte[1 << 16];
+                Stream st = p.StandardOutput.BaseStream;
+                int n;
+                while ((n = st.Read(buf, 0, buf.Length)) > 0)
+                {
+                    ms.Write(buf, 0, n);
+                    if (ms.Length > maxBytes) { try { p.Kill(); } catch (Exception) { } break; }
+                }
+                p.WaitForExit();
+                return ms.Length > 0 ? ms.ToArray() : null;
+            }
+        }
+
+        // Miniaturas para la pista de video: n cuadros de "alto" px, en bgr24 uno tras otro. Solo decodifica cuadros clave,
+        // así que es rápido aun en videos largos. null si este ffmpeg no puede (le falta rawvideo) o el video no se lee.
+        public static byte[] Miniaturas(string path, InfoVideo m, int n, int alto, out int ancho)
+        {
+            ancho = Math.Max(2, (int)Math.Round(m.W * (double)alto / m.H / 2, MidpointRounding.AwayFromZero) * 2);
+            var args = new List<string> { "-hide_banner", "-nostats", "-skip_frame", "nokey", "-i", path, "-an", "-sn",
+                "-vf", "fps=" + n.ToString(CI) + "/" + Math.Max(0.1, m.Dur).ToString("0.###", CI) + ",scale=" + ancho + ":" + alto + ",format=bgr24",
+                "-frames:v", n.ToString(CI), "-f", "rawvideo", "pipe:1" };
+            return EjecutarBytes(args, (long)ancho * alto * 3 * (n + 1));
+        }
+
+        // Forma de onda para la pista de audio: el pico de cada uno de n tramos iguales del tiempo, de 0 a 1
+        // (normalizado al más alto, como en la web). null si no hay audio o este ffmpeg no puede (le falta s16le).
+        public static float[] Onda(string path, double dur, int n)
+        {
+            const int Hz = 2000;
+            var args = new List<string> { "-hide_banner", "-nostats", "-i", path, "-vn", "-sn", "-ac", "1", "-ar", Hz.ToString(CI), "-c:a", "pcm_s16le", "-f", "s16le", "pipe:1" };
+            byte[] b = EjecutarBytes(args, (long)(Hz * 2 * (dur + 5)) + 1000000);
+            if (b == null || b.Length < 2 || dur <= 0) return null;
+            var picos = new float[n];
+            int muestras = b.Length / 2;
+            for (int i = 0; i < muestras; i++)
+            {
+                int k = (int)(i / (double)Hz / dur * n);
+                if (k >= n) k = n - 1;
+                float v = Math.Abs(BitConverter.ToInt16(b, i * 2) / 32768f);
+                if (v > picos[k]) picos[k] = v;
+            }
+            float max = picos.Max();
+            if (max > 0) for (int k = 0; k < n; k++) picos[k] /= max;
+            return picos;
         }
 
         static string UltimoError(List<string> errs)

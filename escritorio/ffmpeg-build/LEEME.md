@@ -30,7 +30,7 @@ Las versiones exactas del compilador y del runtime de cada compilación quedan e
 - **Lee:** MP4/MOV/M4V/3GP, MKV/WEBM, AVI, MPEG-TS/MTS/M2TS, MPG/VOB, FLV, WMV/ASF, OGG.
 - **Decodifica video:** H.264, HEVC/H.265, AV1 (dav1d), VP8, VP9, MPEG-4 Part 2 (Xvid/DivX), MPEG-1/2, H.263, Sorenson/FLV1, MJPEG, ProRes, WMV1/2/3, VC-1, Theora, DV.
 - **Decodifica audio:** AAC, MP3, MP2, AC-3/E-AC-3, DTS, Opus, Vorbis, FLAC, ALAC, WMA, AMR-NB/WB, PCM y ADPCM comunes.
-- **Codifica:** H.264 (libx264), AAC y MP3 (LAME). **Escribe:** MP4, MOV, MKV, M4A (`ipod`) y MP3. Además trae dos codificadores internos para la salida «null» (`pcm_s16le` y `wrapped_avframe`), que se usan para medir el audio y para la primera pasada; sin ellos, la medición de fase falla.
-- **Filtros:** solo los que usa la app (escala, cuadros por segundo, velocidad, giro y volteo, medición y mezcla de audio), más `highpass`, `lowpass`, `afftdn`, `dynaudnorm`, `loudnorm` y `acompressor`, que ya vienen para una futura opción de «mejorar voz».
+- **Codifica:** H.264 (libx264), AAC y MP3 (LAME). **Escribe:** MP4, MOV, MKV, M4A (`ipod`) y MP3. Además trae dos codificadores internos para la salida "null" (`pcm_s16le` y `wrapped_avframe`), que se usan para medir el audio y para la primera pasada; sin ellos, la medición de fase falla. Para el editor, la salida cruda `rawvideo` (las miniaturas de la línea de tiempo) y `s16le` (la forma de onda; en `configure` se llama `pcm_s16le`).
+- **Filtros:** solo los que usa la app (escala, cuadros por segundo, velocidad, giro y volteo, medición y mezcla de audio), `highpass`, `lowpass`, `afftdn`, `dynaudnorm`, `loudnorm` y `acompressor` para "Mejorar voz", y `split`, `asplit`, `concat`, `asetpts`, `apad`, `adelay` y `volume` para aplicar las ediciones del editor.
 - **Textos de licencia:** el script los deja en `salida/licencias/`, sacados de las propias fuentes.
 - **No tiene:** red, dispositivos de captura, aceleración por hardware ni `ffprobe` o `ffplay`.

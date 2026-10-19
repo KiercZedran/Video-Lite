@@ -10,7 +10,7 @@ $exe = Join-Path $dist "VideoLite.exe"
 & $csc /nologo /target:winexe /optimize+ /platform:x64 /codepage:65001 `
     "/out:$exe" "/win32icon:$aqui\videolite.ico" "/win32manifest:$aqui\src\app.manifest" `
     /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
-    "$aqui\src\Textos.cs" "$aqui\src\Motor.cs" "$aqui\src\Ventana.cs"
+    "$aqui\src\Textos.cs" "$aqui\src\Motor.cs" "$aqui\src\Ventana.cs" "$aqui\src\Editor.cs"
 if ($LASTEXITCODE -ne 0) { throw "csc falló ($LASTEXITCODE)" }
 
 $h = (Get-FileHash $exe -Algorithm SHA256).Hash

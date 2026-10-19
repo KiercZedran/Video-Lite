@@ -3,7 +3,7 @@
 #   dist\VideoLite-<ver>-ffmpeg-fuentes.zip  el código fuente completo de ffmpeg.exe (GPL) y su receta
 # Uso: powershell -ExecutionPolicy Bypass -File escritorio\empaquetar.ps1
 $ErrorActionPreference = "Stop"
-$ver = "0.0.2.6"
+$ver = "0.0.3"
 $aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dist = Join-Path $aqui "dist"
 $fb = Join-Path $aqui "ffmpeg-build"
@@ -23,7 +23,7 @@ Copy-Item (Join-Path (Split-Path $aqui -Parent) "LICENSE") "$app\LICENSE.txt"
 Copy-Item "$sal\COMPILACION.txt" "$lic\ffmpeg-COMPILACION.txt"
 
 # Textos de licencia: los deja compilar-ffmpeg.sh en salida\licencias, sacados de las propias fuentes.
-# (No se extraen aquí: el tar.exe de Windows se cuelga con .tar.xz y el GNU tar de Git toma «E:» como servidor remoto.)
+# (No se extraen aquí: el tar.exe de Windows se cuelga con .tar.xz y el GNU tar de Git toma "E:" como servidor remoto.)
 $lics = Get-ChildItem "$sal\licencias" -File
 foreach ($n in @("ffmpeg-COPYING.GPLv2.txt", "ffmpeg-LICENSE.md", "x264-COPYING.txt", "dav1d-COPYING.txt", "zlib-LICENSE.txt", "lame-COPYING.txt")) {
     if (-not ($lics | Where-Object Name -eq $n)) { throw "Falta la licencia $n en $sal\licencias" }
@@ -66,17 +66,18 @@ VIDEO LITE · BY ZEDRAN LABS — v$ver para Windows 10/11 (64 bits)
 
 1. Descomprime esta carpeta donde quieras. No se instala.
 2. Abre VideoLite.exe. Arrastra tus videos, elige el tamaño final y da clic en Procesar.
-   Los comprimidos se guardan en una carpeta «Video Lite» junto a cada original.
-3. Opcional: «Agregar a «Enviar a»», en el pie de la ventana, te deja comprimir con clic
+   Los procesados se guardan en una carpeta "Video Lite" junto a cada original.
+3. Para recortar, quitar tramos o arreglar el audio de un video, marca "Activar editor".
+4. Opcional: "Agregar a Enviar a", en el pie de la ventana, te deja procesar con clic
    derecho en un video → Enviar a → Video Lite.
 
-Si Windows muestra «Windows protegió su PC»: es porque la app todavía no tiene firma de
-desarrollador. Da clic en «Más información» y luego en «Ejecutar de todas formas».
+Si Windows muestra "Windows protegió su PC": es porque la app todavía no tiene firma de
+desarrollador. Da clic en "Más información" y luego en "Ejecutar de todas formas".
 
 ffmpeg.exe debe quedarse en la misma carpeta que VideoLite.exe.
 Tus videos no salen de tu computadora y la app no se conecta a internet.
 
-Para quitarla: si usaste «Agregar a «Enviar a»», quítalo primero con el mismo enlace; luego borra
+Para quitarla: si usaste "Agregar a Enviar a", quítalo primero con el mismo enlace; luego borra
 esta carpeta y, si quieres, %LOCALAPPDATA%\ZedranLabs\VideoLite (solo guarda el tema y el idioma).
 
 Gratis y de código abierto (GPL-3.0, LICENSE.txt): https://github.com/KiercZedran/Video-Lite
@@ -89,9 +90,10 @@ VIDEO LITE · BY ZEDRAN LABS — v$ver for Windows 10/11 (64-bit)
 
 1. Unzip this folder wherever you like. Nothing gets installed.
 2. Open VideoLite.exe (the "English" button switches the language). Drag your videos in,
-   choose the final size and click Process. The compressed files are saved in a
+   choose the final size and click Process. The processed files are saved in a
    "Video Lite" folder next to each original.
-3. Optional: "Add to Send to", in the window footer, lets you right-click a video →
+3. To trim, cut out parts or fix the audio of a video, check "Turn on the editor".
+4. Optional: "Add to Send to", in the window footer, lets you right-click a video →
    Send to → Video Lite.
 
 If Windows shows "Windows protected your PC": the app doesn't have a developer signature yet.
@@ -118,8 +120,8 @@ $zipApp = Join-Path $dist "VideoLite-$ver-win64.zip"
 $zipSrc = Join-Path $dist "VideoLite-$ver-ffmpeg-fuentes.zip"
 Remove-Item $zipApp, $zipSrc -ErrorAction SilentlyContinue
 
-# Compress-Archive de PowerShell 5.1 guarda las rutas con «\», que en Linux y Mac salen como nombres rotos.
-# Se escribe el zip con .NET y rutas con «/», como manda el formato ZIP.
+# Compress-Archive de PowerShell 5.1 guarda las rutas con "\", que en Linux y Mac salen como nombres rotos.
+# Se escribe el zip con .NET y rutas con "/", como manda el formato ZIP.
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 function Nuevo-Zip($carpeta, $zip) {
     $base = Split-Path $carpeta -Parent

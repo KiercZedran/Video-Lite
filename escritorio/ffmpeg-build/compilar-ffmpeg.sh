@@ -75,9 +75,11 @@ DECODERS="h264 hevc mpeg4 msmpeg4v1 msmpeg4v2 msmpeg4v3 mpeg1video mpeg2video h2
           pcm_s16le pcm_s16be pcm_s24le pcm_s24be pcm_s32le pcm_f32le pcm_u8 pcm_alaw pcm_mulaw adpcm_ima_wav adpcm_ms adpcm_ima_qt"
 PARSERS="h264 hevc aac aac_latm mpegaudio mpeg4video mpegvideo vp8 vp9 av1 ac3 dca opus vorbis flac mjpeg vc1 h263"
 # (buffer, buffersink, abuffer y abuffersink vienen siempre en FFmpeg 9)
-# highpass, lowpass, afftdn, dynaudnorm, loudnorm y acompressor: para «Mejorar voz» (si se aprueba)
-FILTERS="scale fps setpts format null transpose hflip vflip rotate crop trim
-         atempo pan astats aresample aformat anull atrim highpass lowpass afftdn dynaudnorm loudnorm acompressor"
+# highpass, lowpass, afftdn, dynaudnorm, loudnorm y acompressor: para "Mejorar voz".
+# split, asplit, concat, asetpts, apad, adelay y volume: para el editor (el mismo grafo que grafoEdicion en sitio/grafo.js).
+FILTERS="scale fps setpts format null transpose hflip vflip rotate crop trim split concat
+         atempo pan astats aresample aformat anull atrim highpass lowpass afftdn dynaudnorm loudnorm acompressor
+         asplit asetpts apad adelay volume"
 opts=()
 for x in $DEMUXERS; do opts+=(--enable-demuxer="$x"); done
 for x in $DECODERS; do opts+=(--enable-decoder="$x"); done
@@ -93,8 +95,8 @@ rm -rf "ffmpeg-$FFMPEG_VER" && tar xJf "ffmpeg-$FFMPEG_VER.tar.xz"
     --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-network \
     --enable-protocol=file --enable-protocol=pipe \
     --enable-encoder=libx264 --enable-encoder=aac --enable-encoder=libmp3lame \
-    --enable-encoder=pcm_s16le --enable-encoder=wrapped_avframe \
-    --enable-muxer=mp4 --enable-muxer=mov --enable-muxer=matroska --enable-muxer=ipod --enable-muxer=mp3 --enable-muxer=null \
+    --enable-encoder=pcm_s16le --enable-encoder=wrapped_avframe --enable-encoder=rawvideo \
+    --enable-muxer=mp4 --enable-muxer=mov --enable-muxer=matroska --enable-muxer=ipod --enable-muxer=mp3 --enable-muxer=null --enable-muxer=rawvideo --enable-muxer=pcm_s16le \
     "${opts[@]}" \
     --pkg-config-flags=--static \
     --extra-cflags="-I$PREFIX/include" --extra-ldflags="-L$PREFIX/lib -static" \

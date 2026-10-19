@@ -1,6 +1,6 @@
 # Video Lite - by Zedran Labs
 
-Compresor de video para Windows. Le dices cuántos MB debe pesar el video y sale de ese tamaño, sin pasarse. Es gratis, no tiene anuncios, no se instala y funciona sin internet.
+Compresor y editor de video para Windows. Le dices cuántos MB debe pesar el video y sale de ese tamaño, sin pasarse. Es gratis, no tiene anuncios, no se instala y funciona sin internet.
 
 *[English below](#english)*
 
@@ -8,12 +8,13 @@ Compresor de video para Windows. Le dices cuántos MB debe pesar el video y sale
 
 Bájalo de la página oficial, [videolite.zedran.xyz](https://videolite.zedran.xyz/#descarga), o directo de la [última versión en GitHub](https://github.com/KiercZedran/Video-Lite/releases/latest) (`VideoLite-win64.zip`). En las notas de cada versión están el SHA-256 y el análisis de VirusTotal.
 
-Si no quieres instalar nada, la página también tiene una versión que corre en el navegador, con un editor para recortar y arreglar el audio.
+Si no quieres instalar nada, la página también tiene una versión que corre en el navegador.
 
 Necesitas Windows de 64 bits. Lo probé en Windows 10 Pro.
 
 ## Qué hace
 
+- Un editor para un video: recorta el inicio y el fin, quita tramos, silencia el audio por tramos, sube o baja el volumen y mueve el audio si no coincide con los labios. Se activa con la casilla "Activar editor" y tiene vista previa con sonido.
 - Eliges los MB y el resultado no se pasa. Si un video difícil se pasa, la app repite sola la segunda pasada, y si aun así no cabe, te lo dice.
 - Trae destinos con su límite: Discord, Discord Nitro, WhatsApp (720p) y correo.
 - Arregla el audio mudo de los videos que se oyen en audífonos pero no en bocinas ni laptops. Pasa cuando los canales tienen la fase invertida.
@@ -75,18 +76,19 @@ Por ahora las versiones no llevan firma digital, así que Windows puede mostrar 
 
 ## English
 
-A video compressor for Windows. Tell it how many MB the video should weigh and that's what you get, not a byte over. Free, no ads, nothing to install, and it works offline.
+A video compressor and editor for Windows. Tell it how many MB the video should weigh and that's what you get, not a byte over. Free, no ads, nothing to install, and it works offline.
 
 ### Download
 
 Grab it from the official page, [videolite.zedran.xyz/en](https://videolite.zedran.xyz/en/#descarga), or straight from the [latest release](https://github.com/KiercZedran/Video-Lite/releases/latest) (`VideoLite-win64.zip`). The SHA-256 and the VirusTotal analysis are in each release's notes.
 
-Don't want to install anything? The page has an in-browser version too, and that one comes with an editor to trim and fix the audio.
+Don't want to install anything? The page has an in-browser version too.
 
 It needs 64-bit Windows. I've tested it on Windows 10 Pro.
 
 ### What it does
 
+- An editor for one video at a time: trim the start and end, cut out parts, mute sections, change the volume and shift the audio when it doesn't match the lips. Check "Turn on the editor"; the preview plays with sound.
 - Pick the MB and it won't go over. When a hard video does, the app redoes the second pass by itself, and if it still won't fit, it says so.
 - Destinations with their limits built in: Discord, Discord Nitro, WhatsApp (720p) and email.
 - Fixes silent audio, the kind you hear on headphones but not on speakers or laptops because the channels are phase-inverted.
