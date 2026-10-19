@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs — editor de un video en la app (P-026), igual que el de la web (sitio/editor.js):
+// Video Lite · Zedran Labs: editor de un video en la app (P-026), igual que el de la web (sitio/editor.js):
 // una casilla "Activar editor" lo despliega en lugar de la lista, con el visor (Reproductor de Windows Media),
 // la línea de tiempo con el video y el audio en pistas separadas y cinco operaciones: recortar el inicio y el fin,
 // quitar tramos, silenciar el audio por tramos, el volumen y mover el audio.

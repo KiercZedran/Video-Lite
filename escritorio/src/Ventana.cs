@@ -1,4 +1,4 @@
-﻿// Video Lite · Zedran Labs — ventana principal (WinForms, .NET Framework 4.8, C# 5).
+// Video Lite · Zedran Labs: ventana principal (WinForms, .NET Framework 4.8, C# 5).
 // Colores = tokens de sitio/styles.css (paleta del Comparador antes/después), en tema claro y oscuro.
 // Textos en Textos.cs (español e inglés, se cambian en vivo). El editor de un video está en Editor.cs.
 using System;
@@ -1019,7 +1019,7 @@ namespace VideoLite
                 bool dura = aj.Speed != 1 || ed != null;
                 if (it.Plan.SoloAudio)
                 {
-                    if (it.Plan.SinPistaAudio) { sub[2].Text = "—"; sub[3].Text = Tx.T("sinPista"); sub[4].Text = ""; alguno = true; continue; }
+                    if (it.Plan.SinPistaAudio) { sub[2].Text = "-"; sub[3].Text = Tx.T("sinPista"); sub[4].Text = ""; alguno = true; continue; }
                     sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
                     sub[3].Text = Tx.T("soloAudio", aj.Formato.ToUpperInvariant());
                     sub[4].Text = Tx.T("porComprimir", aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");

@@ -104,7 +104,7 @@ namespace VideoLite
             { "menos", new[] { "{0} % menos", "{0}% smaller" } },
             { "igual", new[] { "casi igual", "about the same" } },
             { "calEsperada", new[] { "Calidad esperada: {0}", "Expected quality: {0}" } },
-            { "bajaRes", new[] { " — baja la resolución para que se vea más nítido.", " — lower the resolution for a sharper result." } },
+            { "bajaRes", new[] { ". Si bajas la resolución, se verá más nítido.", ". Try a lower resolution for a sharper result." } },
             { "doble", new[] { "Doble clic en un video para verlo en su carpeta.", "Double-click a video to see it in its folder." } },
             { "comprimir", new[] { "Procesar", "Process" } },
             { "comprimirN", new[] { "Procesar {0} videos", "Process {0} videos" } },
@@ -145,8 +145,8 @@ namespace VideoLite
             { "notifTexto", new[] { "Videos procesados: {0} de {1}.", "Videos processed: {0} of {1}." } },
             { "reporteHint", new[] { " Si sigue fallando, avísame por Discord o a Kierc117@hotmail.com.", " If it keeps failing, let me know on Discord or at Kierc117@hotmail.com." } },
             { "licTexto", new[] {
-                "Video Lite · by Zedran Labs — v{0}\nGratis y de código abierto: licencia GPL-3.0 (LICENSE.txt). Código: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe es FFmpeg (https://ffmpeg.org) compilado por Zedran Labs con x264, dav1d, LAME y zlib. Es software libre bajo la GPL versión 2 o posterior y es un programa aparte: Video Lite solo lo ejecuta. Su código fuente completo se descarga del mismo lugar que Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nTus videos se procesan en esta PC y no se envían a ningún servidor.\n\n¿Abrir la carpeta de licencias?",
-                "Video Lite · by Zedran Labs — v{0}\nFree and open source: GPL-3.0 license (LICENSE.txt). Code: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe is FFmpeg (https://ffmpeg.org) built by Zedran Labs with x264, dav1d, LAME and zlib. It is free software under the GPL version 2 or later and a separate program: Video Lite only runs it. Its complete source code is downloaded from the same place as Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nYour videos are processed on this PC and are never sent to any server.\n\nOpen the licenses folder?" } },
+                "Video Lite · by Zedran Labs · v{0}\nGratis y de código abierto: licencia GPL-3.0 (LICENSE.txt). Código: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe es FFmpeg (https://ffmpeg.org) compilado por Zedran Labs con x264, dav1d, LAME y zlib. Es software libre bajo la GPL versión 2 o posterior y es un programa aparte: Video Lite solo lo ejecuta. Su código fuente completo se descarga del mismo lugar que Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nTus videos se procesan en esta PC y no se envían a ningún servidor.\n\n¿Abrir la carpeta de licencias?",
+                "Video Lite · by Zedran Labs · v{0}\nFree and open source: GPL-3.0 license (LICENSE.txt). Code: https://github.com/KiercZedran/Video-Lite\n\nffmpeg.exe is FFmpeg (https://ffmpeg.org) built by Zedran Labs with x264, dav1d, LAME and zlib. It is free software under the GPL version 2 or later and a separate program: Video Lite only runs it. Its complete source code is downloaded from the same place as Video Lite (VideoLite-{0}-ffmpeg-fuentes.zip).\n\nYour videos are processed on this PC and are never sent to any server.\n\nOpen the licenses folder?" } },
             // Motor
             { "revisandoAudio", new[] { "Revisando el audio…", "Checking the audio…" } },
             { "faseNoMedida", new[] { "No se pudo revisar la fase del audio; se dejó en estéreo.", "The audio phase couldn't be checked; it was left in stereo." } },

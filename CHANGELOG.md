@@ -14,7 +14,7 @@ Lo que cambió desde la 0.0.2.6. Es la primera versión con el editor en la app,
 
 | Descarga | Tamaño | SHA-256 |
 |---|---|---|
-| `VideoLite-win64.zip` | 7 226 834 B | `cb0971ebad013526761f920f9f13664cfef0db159b82be7218ee9ad70114f7d4` |
+| `VideoLite-win64.zip` | 7 226 840 B | `39683e9a6bba888f756007ed4ea283f42a2d011c2fdb1652fc9fc817b6e84e2c` |
 | `VideoLite-ffmpeg-fuentes.zip` | 17 155 984 B | `5994180b80b757abbb15115eb070e29737f67cca61b87d9194ddd2a234641e28` |
 
 ### Novedades

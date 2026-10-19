@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs — motor de compresión con ffmpeg nativo.
+// Video Lite · Zedran Labs: motor de compresión con ffmpeg nativo.
 // Misma lógica que sitio/app.js (plan, contenedor, fase invertida, dos pasadas); si cambias una, cambia la otra.
 // C# 5: compila con el csc de .NET Framework 4.8 que trae Windows.
 using System;
