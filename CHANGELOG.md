@@ -4,7 +4,7 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 - **Qué se anota:** cada versión publicada dice qué cambió **desde la versión publicada anterior**, en cuatro apartados: novedades, cambios, correcciones y lo que se eliminó. Lo que se arregló antes de publicarse no aparece como corrección, porque nadie lo llegó a usar.
 - **Compilaciones internas:** las que nunca se publicaron están en la tabla del final.
-- **Numeración:** la **0.0.2.5** es posterior a la **0.1**, aunque el número sea menor. Erick decidió numerar así la versión de arreglos (2026-10-14).
+- **Numeración:** la **0.0.2.5** es posterior a la **0.1**, aunque el número sea menor: la versión de arreglos se numeró así a propósito (2026-10-14).
 
 ---
 
