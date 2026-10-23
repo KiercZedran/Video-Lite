@@ -8,9 +8,14 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ---
 
-## 0.6 - en preparación (sin publicar)
+## 0.6 - 2026-10-23 - publicada
 
-Lo que cambió desde la 0.5. La página ya lo tiene en `sitio\` y la app en `escritorio\src\`. Se publican juntas, porque el número del pie de la página es el de la app que se descarga.
+Lo que cambió desde la 0.5. La app y la página estrenan juntas el estilo Zedran Aero, el de las herramientas gratuitas de Zedran Labs.
+
+| Descarga | Tamaño | SHA-256 |
+|---|---|---|
+| `VideoLite-win64.zip` | 7 664 812 B | `f2393dec0b2cc562856e4a9ef82011a532c03cbbb630f0050220aa9b354b552d` |
+| `VideoLite-ffmpeg-fuentes.zip` | 17 155 984 B | `bcdd4d869fddeb3c80fcb2176d0bfd040cfb7fa2f68ba614c2e9cb5d9ffebc7e` |
 
 ### Novedades
 
