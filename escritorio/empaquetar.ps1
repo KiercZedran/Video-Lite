@@ -89,7 +89,7 @@ Reportes: https://discord.com/invite/2ZRbaYDAnR · Kierc117@hotmail.com
 VIDEO LITE · BY ZEDRAN LABS · v$ver for Windows 10/11 (64-bit)
 
 1. Unzip this folder wherever you like. Nothing gets installed.
-2. Open VideoLite.exe (the "English" button switches the language). Drag your videos in,
+2. Open VideoLite.exe (the round "EN" button at the top switches the language). Drag your videos in,
    choose the final size and click Process. The processed files are saved in a
    "Video Lite" folder next to each original.
 3. To trim, cut out parts or fix the audio of a video, check "Turn on the editor".
