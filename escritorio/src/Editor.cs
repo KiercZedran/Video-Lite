@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using ZedranAero;
 
 namespace VideoLite
 {
@@ -67,7 +68,7 @@ namespace VideoLite
     }
 
     // Línea de tiempo: pista de video (miniaturas) y pista de audio (forma de onda), con lo recortado, los tramos quitados,
-    // los silencios, el tramo marcado, el cabezal y las asas de inicio y fin. Se dibuja con la paleta (C).
+    // los silencios, el tramo marcado, el cabezal y las asas de inicio y fin. Se dibuja con la paleta (Paleta).
     class LineaTiempo : Control
     {
         public Edicion Ed;
@@ -89,7 +90,8 @@ namespace VideoLite
 
         public LineaTiempo()
         {
-            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.Selectable | ControlStyles.SupportsTransparentBackColor, true);
+            BackColor = Color.Transparent;   // sobre el vidrio del panel
             TabStop = true;
             Cursor = Cursors.Hand;
             AccessibleRole = AccessibleRole.Slider;
@@ -148,9 +150,8 @@ namespace VideoLite
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            g.Clear(BackColor);
             var v = PistaV; var a = PistaA;
-            using (var fondo = new SolidBrush(C.Surface2)) { g.FillRectangle(fondo, v); g.FillRectangle(fondo, a); }
+            using (var fondo = new SolidBrush(Paleta.Surface2)) { g.FillRectangle(fondo, v); g.FillRectangle(fondo, a); }
             // Miniaturas: cada una con su proporción, repetidas a lo ancho; la de cada lugar es la de ese momento.
             if (Cuadros != null && Cuadros.Count > 0)
             {
@@ -168,7 +169,7 @@ namespace VideoLite
             if (Picos != null && Picos.Length > 0)
             {
                 float medio = a.Top + a.Height / 2f;
-                using (var p = new Pen(C.Accent))
+                using (var p = new Pen(Paleta.Accent))
                     for (int x = a.Left; x < a.Right; x++)
                     {
                         int k = Math.Max(0, Math.Min(Picos.Length - 1, (int)((x - a.Left) / (double)a.Width * Picos.Length)));
@@ -179,20 +180,20 @@ namespace VideoLite
             if (Ed != null)
             {
                 // Fuera del recorte: atenuado en las dos pistas
-                using (var b = new SolidBrush(Color.FromArgb(170, C.Bg)))
+                using (var b = new SolidBrush(Color.FromArgb(170, Paleta.Bg)))
                 {
                     if (Ed.Entrada > 0) { g.FillRectangle(b, v.Left, v.Top, X(Ed.Entrada) - v.Left, v.Height); g.FillRectangle(b, a.Left, a.Top, X(Ed.Entrada) - a.Left, a.Height); }
                     if (Ed.Salida < Ed.Dur) { g.FillRectangle(b, X(Ed.Salida), v.Top, v.Right - X(Ed.Salida), v.Height); g.FillRectangle(b, X(Ed.Salida), a.Top, a.Right - X(Ed.Salida), a.Height); }
                 }
                 // Tramos quitados: rayados en rojo, en las dos pistas
-                using (var b = new HatchBrush(HatchStyle.BackwardDiagonal, Color.FromArgb(200, C.Danger), Color.FromArgb(110, C.Bg)))
+                using (var b = new HatchBrush(HatchStyle.BackwardDiagonal, Color.FromArgb(200, Paleta.Danger), Color.FromArgb(110, Paleta.Bg)))
                     foreach (var c in Edicion.Unir(Ed.Cortes))
                     {
                         float x1 = X(c[0]), x2 = Math.Max(X(c[1]), x1 + 2);
                         g.FillRectangle(b, x1, v.Top, x2 - x1, v.Height); g.FillRectangle(b, x1, a.Top, x2 - x1, a.Height);
                     }
                 // Silencios: solo en la pista de audio
-                using (var b = new HatchBrush(HatchStyle.DarkUpwardDiagonal, Color.FromArgb(200, C.Ink3), Color.FromArgb(140, C.Surface2)))
+                using (var b = new HatchBrush(HatchStyle.DarkUpwardDiagonal, Color.FromArgb(200, Paleta.Ink3), Color.FromArgb(140, Paleta.Surface2)))
                     foreach (var s in Edicion.Unir(Ed.Silencios))
                     {
                         float x1 = X(s[0]), x2 = Math.Max(X(s[1]), x1 + 2);
@@ -202,16 +203,16 @@ namespace VideoLite
                 if (Desde.HasValue && Hasta.HasValue)
                 {
                     float x1 = X(Math.Min(Desde.Value, Hasta.Value)), x2 = X(Math.Max(Desde.Value, Hasta.Value));
-                    using (var b = new SolidBrush(Color.FromArgb(70, C.Accent))) g.FillRectangle(b, x1, v.Top, Math.Max(2, x2 - x1), a.Bottom - v.Top);
-                    using (var p = new Pen(C.Accent, 2)) g.DrawRectangle(p, x1, v.Top, Math.Max(2, x2 - x1), a.Bottom - v.Top);
+                    using (var b = new SolidBrush(Color.FromArgb(70, Paleta.Accent))) g.FillRectangle(b, x1, v.Top, Math.Max(2, x2 - x1), a.Bottom - v.Top);
+                    using (var p = new Pen(Paleta.Accent, 2)) g.DrawRectangle(p, x1, v.Top, Math.Max(2, x2 - x1), a.Bottom - v.Top);
                 }
                 else if (Desde.HasValue || Hasta.HasValue)
                 {
                     float x1 = X(Desde.HasValue ? Desde.Value : Hasta.Value);
-                    using (var p = new Pen(C.AccentText, 2) { DashStyle = DashStyle.Dash }) g.DrawLine(p, x1, v.Top, x1, a.Bottom);
+                    using (var p = new Pen(Paleta.Ink, 2) { DashStyle = DashStyle.Dash }) g.DrawLine(p, x1, v.Top, x1, a.Bottom);
                 }
                 // Asas del recorte
-                using (var b = new SolidBrush(C.Accent))
+                using (var b = new SolidBrush(Paleta.Accent))
                     foreach (double t in new[] { Ed.Entrada, Ed.Salida })
                     {
                         float x = X(t);
@@ -220,13 +221,13 @@ namespace VideoLite
             }
             // Cabezal
             float xc = X(Cabezal);
-            using (var p = new Pen(C.Ink, 2)) g.DrawLine(p, xc, 0, xc, Height);
-            using (var b = new SolidBrush(C.Ink)) g.FillPolygon(b, new[] { new PointF(xc - 6, 0), new PointF(xc + 6, 0), new PointF(xc, 7) });
+            using (var p = new Pen(Paleta.Ink, 2)) g.DrawLine(p, xc, 0, xc, Height);
+            using (var b = new SolidBrush(Paleta.Ink)) g.FillPolygon(b, new[] { new PointF(xc - 6, 0), new PointF(xc + 6, 0), new PointF(xc, 7) });
             // Foco de dos anillos (se ve sobre cualquier fondo)
             if (Focused)
             {
-                using (var p1 = new Pen(C.Ink, 2)) g.DrawRectangle(p1, 1, 1, Width - 3, Height - 3);
-                using (var p2 = new Pen(C.Bg, 1)) g.DrawRectangle(p2, 3, 3, Width - 7, Height - 7);
+                using (var p1 = new Pen(Paleta.Ink, 2)) g.DrawRectangle(p1, 1, 1, Width - 3, Height - 3);
+                using (var p2 = new Pen(Paleta.Bg, 1)) g.DrawRectangle(p2, 3, 3, Width - 7, Height - 7);
             }
         }
     }
@@ -234,13 +235,13 @@ namespace VideoLite
     public partial class Ventana
     {
         bool editorOn;
-        Casilla chkEditor;
+        CasillaAero chkEditor;
         TableLayoutPanel colVideos, edRaiz;
         Panel edCaja;              // se desplaza a lo alto; adentro, edRaiz mide lo que mide su contenido
         Label lblSecVideos, edVacioTxt, edVacioSub, edSinVista, edTiempo, edQueda, edSel, edVolTxt, edNota, edAyuda;
         Button btnAgregarVideos, btnAgregarCarpeta, edElegir, edCambiarVideo, edQuitarVideo, edPlay, edEmpieza, edTermina, edDesde, edHasta, edQuitar, edSilenciar, edReset, edMenos, edMas;
         Panel edVisor, edVacio;
-        TrackBar edVol;
+        Deslizador edVol;
         NumericUpDown edDes;
         FlowLayoutPanel edLista;
         LineaTiempo edLinea;
@@ -274,25 +275,27 @@ namespace VideoLite
 
         Control ConstruirEditor()
         {
-            edCaja = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = C.Bg, Margin = new Padding(0) };
-            edRaiz = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 5, Margin = new Padding(0), BackColor = C.Bg };
+            edCaja = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.Transparent, Margin = new Padding(16, 0, 10, 12) };
+            edRaiz = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 5, Margin = new Padding(0), BackColor = Color.Transparent };
             edCaja.Controls.Add(edRaiz);
             edRaiz.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));   // el ancho visible: nunca se desplaza a lo ancho
             edRaiz.RowStyles.Add(new RowStyle(SizeType.Absolute, 200));  // visor: 16:9 del ancho (se ajusta al cambiar de tamaño)
             for (int i = 1; i < 5; i++) edRaiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // Visor: el reproductor, o el aviso sin vista previa, o la zona para soltar un video
-            edVisor = new Panel { Dock = DockStyle.Fill, BackColor = Color.Black, Margin = new Padding(0, 0, 0, 6), AllowDrop = true };
+            edVisor = new Panel { Dock = DockStyle.Fill, BackColor = Paleta.Visor, Margin = new Padding(0, 0, 0, 6), AllowDrop = true };
             edVisor.DragEnter += AlArrastrar; edVisor.DragDrop += AlSoltar;
             edSinVista = new Label { Dock = DockStyle.Bottom, AutoSize = false, Height = 44, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.White, BackColor = Color.FromArgb(40, 40, 40), Visible = false, Font = fChico };
             edVisor.Controls.Add(edSinVista);
-            edVacio = new Panel { Dock = DockStyle.Fill, BackColor = C.Surface, AllowDrop = true };
+            // Sin video, la zona para soltar (.drop de la web): sobre el vidrio del panel, no sobre el visor
+            edVacio = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, AllowDrop = true };
+            Aero.Estilos(edVacio, ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.ResizeRedraw);
             edVacio.DragEnter += AlArrastrar; edVacio.DragDrop += AlSoltar;
-            edVacio.Paint += (s, e) => { using (var p = new Pen(C.LineStrong) { DashStyle = DashStyle.Dash }) e.Graphics.DrawRectangle(p, 6, 6, edVacio.Width - 13, edVacio.Height - 13); };
-            var vacioCaja = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, BackColor = C.Surface };
+            edVacio.Paint += (s, e) => Aero.PintarZonaSoltar(e.Graphics, edVacio);
+            var vacioCaja = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, BackColor = Color.Transparent };
             edVacioTxt = L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 0, 2) }, "edVacio");
-            edVacioSub = L(new Label { Font = fChico, ForeColor = C.Ink3, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, "edVacioSub");
-            edElegir = L(Boton("", true, (s, e) => ElegirVideos()), "edElegir");
+            edVacioSub = L(new Label { Font = fChico, ForeColor = Paleta.Ink3, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, "edVacioSub");
+            edElegir = L(Boton("", TipoBoton.Accion, (s, e) => ElegirVideos()), "edElegir");
             vacioCaja.Controls.Add(edVacioTxt); vacioCaja.Controls.Add(edVacioSub); vacioCaja.Controls.Add(edElegir);
             edVacio.Controls.Add(vacioCaja);
             edVacio.Resize += (s, e) => vacioCaja.Location = new Point(Math.Max(8, (edVacio.Width - vacioCaja.Width) / 2), Math.Max(8, (edVacio.Height - vacioCaja.Height) / 2));
@@ -306,20 +309,22 @@ namespace VideoLite
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             transporte.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            edPlay = Boton("▶", false, (s, e) => EdPlayPausa());
-            edPlay.Font = new Font("Segoe UI Symbol", 10f); edPlay.AccessibleName = Tx.T("edReproducir"); edPlay.MinimumSize = new Size(44, 30);
-            edTiempo = new Label { AutoSize = true, Font = fChico, ForeColor = C.Ink2, Margin = new Padding(6, 8, 0, 0) };
+            edPlay = Boton("▶", TipoBoton.Principal, (s, e) => EdPlayPausa());   // [PRINCIPAL] redondo, como en la web
+            ((BotonAero)edPlay).Redondo = true;
+            edPlay.Font = new Font("Segoe UI Symbol", 11f); edPlay.AccessibleName = Tx.T("edReproducir"); edPlay.MinimumSize = new Size(40, 40);
+            edTiempo = new Label { AutoSize = true, Font = fChico, ForeColor = Paleta.Ink2, Margin = new Padding(6, 8, 0, 0) };
             edQueda = new Label { AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 0, 0), Anchor = AnchorStyles.Right };
             edQueda.Margin = new Padding(0, 8, 14, 0);
-            edCambiarVideo = L(Boton("", false, (s, e) => ElegirVideos()), "edCambiarVideo");
-            edQuitarVideo = L(Boton("", false, (s, e) => { if (edItem != null) { lista.SelectedItems.Clear(); edItem.Lv.Selected = true; QuitarSeleccionados(); } }), "edQuitarVideo");
+            edCambiarVideo = L(Boton("", TipoBoton.Accion, (s, e) => ElegirVideos()), "edCambiarVideo");
+            edQuitarVideo = L(Boton("", TipoBoton.Terciario, (s, e) => { if (edItem != null) { lista.SelectedItems.Clear(); edItem.Lv.Selected = true; QuitarSeleccionados(); } }), "edQuitarVideo");
             edCambiarVideo.Font = edQuitarVideo.Font = fChico;
+            foreach (var b in new[] { edCambiarVideo, edQuitarVideo }) b.Anchor = AnchorStyles.Right;   // a media altura del de reproducir
             transporte.Controls.Add(edPlay, 0, 0); transporte.Controls.Add(edTiempo, 1, 0); transporte.Controls.Add(edQueda, 2, 0);
             transporte.Controls.Add(edCambiarVideo, 3, 0); transporte.Controls.Add(edQuitarVideo, 4, 0);
             edRaiz.Controls.Add(transporte, 0, 1);
 
             // Línea de tiempo
-            edLinea = new LineaTiempo { Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Height = 116, BackColor = C.Bg, Margin = new Padding(0, 0, 0, 2) };
+            edLinea = new LineaTiempo { Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top, Height = 116, Margin = new Padding(0, 0, 0, 2) };
             edLinea.AccessibleName = Tx.T("edLinea");
             edLinea.Ir += t => EdIr(t);
             edLinea.Marcar += (a, b) => { edLinea.Desde = a; edLinea.Hasta = b; EdPintar(); };
@@ -335,32 +340,32 @@ namespace VideoLite
             var grupoRecorte = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             var grupoTramo = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             grupoRecorte.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 8, 6, 0) }, "edRecortar"));
-            edEmpieza = L(Boton("", false, (s, e) => EdPonerRecorte("in", edLinea.Cabezal)), "edEmpieza");
-            edTermina = L(Boton("", false, (s, e) => EdPonerRecorte("out", edLinea.Cabezal)), "edTermina");
+            edEmpieza = L(Boton("", TipoBoton.Accion, (s, e) => EdPonerRecorte("in", edLinea.Cabezal)), "edEmpieza");
+            edTermina = L(Boton("", TipoBoton.Accion, (s, e) => EdPonerRecorte("out", edLinea.Cabezal)), "edTermina");
             grupoRecorte.Controls.Add(edEmpieza); grupoRecorte.Controls.Add(edTermina);
             grupoTramo.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 8, 6, 0) }, "edTramoMarcado"));
-            edDesde = L(Boton("", false, (s, e) => EdExtremo(true)), "edDesde");
-            edHasta = L(Boton("", false, (s, e) => EdExtremo(false)), "edHasta");
-            edQuitar = L(Boton("", false, (s, e) => EdQuitarTramo()), "edQuitar");
-            edSilenciar = L(Boton("", false, (s, e) => EdSilenciar()), "edSilenciar");
+            edDesde = L(Boton("", TipoBoton.Accion, (s, e) => EdExtremo(true)), "edDesde");
+            edHasta = L(Boton("", TipoBoton.Accion, (s, e) => EdExtremo(false)), "edHasta");
+            edQuitar = L(Boton("", TipoBoton.Accion, (s, e) => EdQuitarTramo()), "edQuitar");
+            edSilenciar = L(Boton("", TipoBoton.Accion, (s, e) => EdSilenciar()), "edSilenciar");
             foreach (var b in new[] { edDesde, edHasta, edQuitar, edSilenciar }) grupoTramo.Controls.Add(b);
             ops.Controls.Add(grupoRecorte); ops.Controls.Add(grupoTramo);
-            edSel = new Label { AutoSize = true, Font = fChico, ForeColor = C.Ink2, Margin = new Padding(0, 0, 0, 6) };
+            edSel = new Label { AutoSize = true, Font = fChico, ForeColor = Paleta.Ink2, Margin = new Padding(0, 0, 0, 6) };
 
             // Volumen y mover el audio
             var audio = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 2) };
             var grupoVol = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             var grupoMover = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             grupoVol.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 8, 6, 0) }, "edVolumen"));
-            edVol = new TrackBar { Minimum = 0, Maximum = 300, TickFrequency = 50, TickStyle = TickStyle.None, Width = 150, Value = 100, BackColor = C.Bg, Margin = new Padding(0, 4, 2, 0) };
+            edVol = new Deslizador { Minimum = 0, Maximum = 300, SmallChange = 5, LargeChange = 25, Width = 150, Value = 100, Margin = new Padding(0, 4, 2, 0) };
             edVol.ValueChanged += (s, e) => { if (edActualizando || edItem == null) return; edItem.Ed.Volumen = edVol.Value / 100.0; EdCambio(); };
             edVolTxt = new Label { AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 14, 0) };
             grupoVol.Controls.Add(edVol); grupoVol.Controls.Add(edVolTxt);
             grupoMover.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 8, 6, 0) }, "edMover"));
-            edMenos = L(Boton("", false, (s, e) => EdMoverAudio(-0.02)), "edAdelantar");
-            edDes = new NumericUpDown { Minimum = -5, Maximum = 5, DecimalPlaces = 2, Increment = 0.02m, Width = 70, TextAlign = HorizontalAlignment.Right, BackColor = C.Bg, ForeColor = C.Ink, Margin = new Padding(0, 4, 4, 0) };
+            edMenos = L(Boton("", TipoBoton.Terciario, (s, e) => EdMoverAudio(-0.02)), "edAdelantar");
+            edDes = new NumericUpDown { Minimum = -5, Maximum = 5, DecimalPlaces = 2, Increment = 0.02m, Width = 70, TextAlign = HorizontalAlignment.Right, BackColor = Paleta.Bg, ForeColor = Paleta.Ink, Margin = new Padding(0, 4, 4, 0) };
             edDes.ValueChanged += (s, e) => { if (edActualizando || edItem == null) return; edItem.Ed.Desfase = (double)edDes.Value; EdCambio(); };
-            edMas = L(Boton("", false, (s, e) => EdMoverAudio(0.02)), "edAtrasar");
+            edMas = L(Boton("", TipoBoton.Terciario, (s, e) => EdMoverAudio(0.02)), "edAtrasar");
             grupoMover.Controls.Add(edMenos); grupoMover.Controls.Add(edDes);
             grupoMover.Controls.Add(new Label { Text = "s", AutoSize = true, Margin = new Padding(0, 8, 6, 0) });
             grupoMover.Controls.Add(edMas);
@@ -370,7 +375,7 @@ namespace VideoLite
             var cambios = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0) };
             var cab = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
             cab.Controls.Add(L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 6, 8, 0) }, "edCambios"));
-            edReset = L(Boton("", false, (s, e) => EdDeshacerTodo()), "edDeshacerTodo");
+            edReset = L(Boton("", TipoBoton.Accion, (s, e) => EdDeshacerTodo()), "edDeshacerTodo");
             edReset.Font = fChico;
             cab.Controls.Add(edReset);
             cambios.Controls.Add(cab);
@@ -448,8 +453,9 @@ namespace VideoLite
             editorOn = on;
             btnAgregarCarpeta.Visible = !on;
             CambiarClave(lblSecVideos, on ? "edTitulo" : "secVideos");
-            lblSecVideos.Visible = !on;                    // como en la web: el editor reemplaza "1 · Tus videos"
+            lblSecVideos.Visible = !on;                    // como en la web, el editor reemplaza "1 · Tus videos"; sin su barra gana alto
             btnAgregarVideos.Parent.Visible = !on;         // cambiar o quitar el video: en la fila de reproducir
+            marcoLista.Margin = new Padding(16, on ? 12 : 0, 16, on ? 10 : 16);   // sin la fila de botones, el aire lo da la lista
             AcomodoAjustes();          // los ajustes pasan debajo del editor (o vuelven a la derecha)
             colVideos.PerformLayout();
             AnimarEditor(on);
@@ -462,9 +468,10 @@ namespace VideoLite
         void AnimarEditor(bool on)
         {
             var filas = colVideos.RowStyles;
-            int alto = colVideos.ClientSize.Height - (lblSecVideos.Visible ? lblSecVideos.Height : 0) - (btnAgregarVideos.Parent.Visible ? btnAgregarVideos.Parent.Height : 0) - 16;
-            int fila = lista.Font.Height * 2 + 22;    // encabezado y una fila
-            int desde = on ? Math.Max(fila, lista.Height) : fila, hasta = on ? fila : Math.Max(fila, alto);
+            var bot = btnAgregarVideos.Parent;
+            int alto = colVideos.ClientSize.Height - colVideos.Padding.Vertical - (lblSecVideos.Visible ? lblSecVideos.Height : 0) - (bot.Visible ? bot.Height + bot.Margin.Vertical : 0) - 4;
+            int fila = lista.Font.Height * 2 + 16 + marcoLista.Padding.Vertical + marcoLista.Margin.Vertical;    // encabezado y una fila
+            int desde = on ? Math.Max(fila, marcoLista.Height + marcoLista.Margin.Vertical) : fila, hasta = on ? fila : Math.Max(fila, alto);
             if (edAnim != null) edAnim.Stop();
             int paso = 0, pasos = 12;
             filas[2] = new RowStyle(SizeType.Absolute, desde);
@@ -658,7 +665,7 @@ namespace VideoLite
             if (edItem == null || r == null || r[1] - r[0] < Edicion.MinTramo) return;
             var prueba = edItem.Ed.Copia();
             prueba.Cortes.Add(r);
-            if (prueba.Tramos().Count == 0) { edSel.Text = Tx.T("edTodo"); edSel.ForeColor = C.Danger; return; }
+            if (prueba.Tramos().Count == 0) { edSel.Text = Tx.T("edTodo"); edSel.ForeColor = Paleta.Danger; return; }
             edItem.Ed.Cortes.Add(r);
             edLinea.Desde = edLinea.Hasta = null;
             EdCambio();
@@ -730,7 +737,7 @@ namespace VideoLite
             // El tramo marcado: qué falta para poder usarlo
             var r = EdRango();
             bool valido = r != null && r[1] - r[0] >= Edicion.MinTramo;
-            edSel.ForeColor = C.Ink2;
+            edSel.ForeColor = Paleta.Ink2;
             if (r != null) edSel.Text = valido ? Tx.T("edSel", FmtT(r[0]), FmtT(r[1]), FmtT(r[1] - r[0])) : Tx.T("edSelCorto");
             else if (edLinea.Desde.HasValue) edSel.Text = Tx.T("edSelInicio", FmtT(edLinea.Desde.Value));
             else if (edLinea.Hasta.HasValue) edSel.Text = Tx.T("edSelFin", FmtT(edLinea.Hasta.Value));
@@ -747,7 +754,7 @@ namespace VideoLite
             foreach (var s in Edicion.Unir(e.Silencios)) { var ss = s; filas.Add(Tuple.Create(Tx.T("edItemSilencio", FmtT(s[0]), FmtT(s[1])), (Action)(() => { e.Silencios = Edicion.Unir(e.Silencios).Where(x => !(x[0] == ss[0] && x[1] == ss[1])).ToList(); }))); }
             if (Math.Abs(e.Volumen - 1) > 0.001) filas.Add(Tuple.Create(Tx.T("edItemVolumen", Math.Round(e.Volumen * 100).ToString(CultureInfo.InvariantCulture)), (Action)(() => { e.Volumen = 1; })));
             if (Math.Abs(e.Desfase) > 0.0005) filas.Add(Tuple.Create(Tx.T("edItemDesfase", Math.Round(e.Desfase * 1000).ToString(CultureInfo.InvariantCulture)), (Action)(() => { e.Desfase = 0; })));
-            if (filas.Count == 0) edLista.Controls.Add(new Label { Text = Tx.T("edNoCambios"), AutoSize = true, Font = fChico, ForeColor = C.Ink3, Margin = new Padding(0, 0, 0, 2) });
+            if (filas.Count == 0) edLista.Controls.Add(new Label { Text = Tx.T("edNoCambios"), AutoSize = true, Font = fChico, ForeColor = Paleta.Ink3, Margin = new Padding(0, 0, 0, 2) });
             foreach (var f in filas)
             {
                 var fila = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };

@@ -8,6 +8,44 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ---
 
+## 0.6 - en preparación (sin publicar)
+
+Lo que cambió desde la 0.5. La página ya lo tiene en `sitio\` y la app en `escritorio\src\`. Se publican juntas, porque el número del pie de la página es el de la app que se descarga.
+
+### Novedades
+
+**Página**
+- **Estilo nuevo, Zedran Aero:** paneles de vidrio sobre una foto de fondo, botones con brillo y orbes, como en Windows 7. Tiene tema claro (Full Aero) y oscuro (Dark Aero), con el mismo botón de sol y luna.
+- **Animación del fondo:** burbujas en el tema claro; en el oscuro, motas de luz y, de vez en cuando, una estela.
+- **Botón de engrane** abajo a la derecha, para apagar la animación o el fondo difuminado. La elección se guarda en el navegador.
+
+**App de Windows**
+- **Estilo Zedran Aero**, el mismo de la página, con tema claro y oscuro como antes.
+  - Una foto de fondo difuminada y, encima, paneles de vidrio con su barra de título azul.
+  - Botones con brillo: verde para "Procesar" y reproducir, azul para lo que se hace con el video y gris para lo de menos.
+  - El idioma y el tema van en dos botones redondos (EN o ES, y luna o sol). Al pasar el mouse dicen qué hacen.
+  - La barra de avance es la verde de Windows 7.
+  - No trae la animación de la página: la app no gasta en eso mientras comprime.
+
+### Cambios
+
+**Página**
+- **La letra** es Segoe UI (la de Windows), con Figtree de respaldo fuera de Windows. Ya no se precargan fuentes.
+- **Los enlaces** van del color del texto, con el subrayado verde.
+- **El estilo** vive en dos hojas nuevas: `zedran-aero.css`, el estilo de todas las herramientas gratuitas de Zedran Labs, y `video-lite-aero.css`, lo propio de Video Lite.
+
+**App de Windows**
+- **Calidad y velocidad** se eligen con botones en lugar de círculos. Las calidades que no sirven para ese video salen tachadas.
+- **Los deslizadores** del tamaño y del volumen son verdes, con la bolita blanca.
+- **En el pie**, los enlaces van del color del texto con el subrayado verde, e "Invítame un café en Ko-fi" pasó a ser un botón.
+- **Los títulos** usan Segoe UI, como el resto; antes eran Bahnschrift.
+
+### Correcciones
+
+- **"Discord"** en el pie no era un enlace. Ahora sí lo es, y "Reportar un problema" queda como texto.
+
+---
+
 ## 0.5 - 2026-10-19 - publicada
 
 Lo que cambió desde la 0.0.2.6. Es la primera versión con el editor en la app, y con ella se actualiza también la página.

@@ -1,5 +1,6 @@
 // Video Lite · Zedran Labs: ventana principal (WinForms, .NET Framework 4.8, C# 5).
-// Colores = tokens de sitio/styles.css (paleta del Comparador antes/después), en tema claro y oscuro.
+// Estilo Zedran Aero, el mismo de la web: ZedranAero.cs, copiado tal cual del paquete del estándar de webapps
+// gratuitas (zedran-aero\winforms\). Full Aero en tema claro y Dark Aero en oscuro; los colores están en Paleta.
 // Textos en Textos.cs (español e inglés, se cambian en vivo). El editor de un video está en Editor.cs.
 using System;
 using System.Collections.Generic;
@@ -13,43 +14,21 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using ZedranAero;
 
 [assembly: AssemblyTitle("Video Lite")]
 [assembly: AssemblyProduct("Video Lite · by Zedran Labs")]
 [assembly: AssemblyCompany("Zedran Labs")]
 [assembly: AssemblyCopyright("Zedran Labs")]
-[assembly: AssemblyVersion("0.5")]
-[assembly: AssemblyFileVersion("0.5")]
+[assembly: AssemblyVersion("0.6")]
+[assembly: AssemblyFileVersion("0.6")]
 
 namespace VideoLite
 {
-    // Mismos valores que :root y :root[data-theme="dark"] de sitio/styles.css (contraste verificado con herramientas/contraste.py).
+    // La versión de la app (la del pie de la página y la del Release). Los colores están en Paleta (ZedranAero.cs).
     static class C
     {
-        public const string Version = "0.5";
-        public static Color Bg, Surface, Surface2, Line, LineStrong, Ink, Ink2, Ink3, Accent, AccentText, AccentSoft, Amber, AmberSoft, Danger;
-        public static bool Oscuro;
-        static C() { Aplicar(false); }
-
-        public static void Aplicar(bool oscuro)
-        {
-            Oscuro = oscuro;
-            if (!oscuro)
-            {
-                Bg = Hex("#ffffff"); Surface = Hex("#f6f9fd"); Surface2 = Hex("#e9f0f8"); Line = Hex("#d3dde9"); LineStrong = Hex("#76869b");
-                Ink = Hex("#0f1b2d"); Ink2 = Hex("#435166"); Ink3 = Hex("#56657b"); Accent = Hex("#1a73c9"); AccentText = Hex("#1767b8");
-                AccentSoft = Hex("#eaf4fe"); Amber = Hex("#8a5800"); AmberSoft = Hex("#fbefd6"); Danger = Hex("#c0392b");
-            }
-            else
-            {
-                Bg = Hex("#1b2330"); Surface = Hex("#232e3e"); Surface2 = Hex("#2b384b"); Line = Hex("#344257"); LineStrong = Hex("#71849e");
-                Ink = Hex("#e6edf6"); Ink2 = Hex("#b4c2d4"); Ink3 = Hex("#9aaabf"); Accent = Hex("#2f6fe0"); AccentText = Hex("#8fb8ff");
-                AccentSoft = Hex("#1f3556"); Amber = Hex("#f2a51a"); AmberSoft = Hex("#33301f"); Danger = Hex("#f08a7a");
-            }
-        }
-
-        public static Color[] Tokens() { return new[] { Bg, Surface, Surface2, Line, LineStrong, Ink, Ink2, Ink3, Accent, AccentText, AccentSoft, Amber, AmberSoft, Danger }; }
-        static Color Hex(string h) { return ColorTranslator.FromHtml(h); }
+        public const string Version = "0.6";
     }
 
     // Preferencias en %LOCALAPPDATA%\ZedranLabs\VideoLite\ajustes.txt (líneas clave=valor). Solo tema e idioma.
@@ -89,33 +68,9 @@ namespace VideoLite
 
     static class Win
     {
-        [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-        [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)] static extern int SetWindowTheme(IntPtr hwnd, string app, string idList);
-        [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
         [DllImport("user32.dll")] static extern bool FlashWindowEx(ref FLASHWINFO fi);
-        [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
         [StructLayout(LayoutKind.Sequential)]
         struct FLASHWINFO { public uint cbSize; public IntPtr hwnd; public uint dwFlags; public uint uCount; public uint dwTimeout; }
-
-        // Barra de título oscura (Windows 10 20H1+ usa el atributo 20; versiones anteriores, 19).
-        public static void TituloOscuro(Form f, bool oscuro)
-        {
-            try
-            {
-                int v = oscuro ? 1 : 0;
-                if (DwmSetWindowAttribute(f.Handle, 20, ref v, 4) != 0) DwmSetWindowAttribute(f.Handle, 19, ref v, 4);
-                SetWindowPos(f.Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0020); // NOSIZE|NOMOVE|NOZORDER|FRAMECHANGED
-                // Al cambiar de tema con la ventana abierta, Windows 10 no repinta la barra hasta que cambia de activa a inactiva:
-                // se le manda WM_NCACTIVATE dos veces (el estado contrario y luego el real).
-                bool activa = Form.ActiveForm == f;
-                SendMessage(f.Handle, 0x0086, activa ? IntPtr.Zero : (IntPtr)1, IntPtr.Zero);
-                SendMessage(f.Handle, 0x0086, activa ? (IntPtr)1 : IntPtr.Zero, IntPtr.Zero);
-            }
-            catch (Exception) { }
-        }
-
-        // Barras de desplazamiento oscuras (Windows 10 1809+). En versiones viejas no hace nada.
-        public static void Barras(Control c, bool oscuro) { try { SetWindowTheme(c.Handle, oscuro ? "DarkMode_Explorer" : "Explorer", null); } catch (Exception) { } }
 
         // Hace parpadear el botón de la barra de tareas hasta que la ventana recibe el foco.
         public static void Parpadear(Form f)
@@ -128,62 +83,6 @@ namespace VideoLite
             }
             catch (Exception) { }
         }
-    }
-
-    // Radio y casilla dibujados con la paleta: los de Windows pintan el texto desactivado casi negro sobre el fondo oscuro.
-    static class Marca
-    {
-        const TextFormatFlags Flags = TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPadding;
-        static int Lado(Control c) { return (int)Math.Round(c.Font.Height * 0.8); }
-
-        // Tamaño propio: círculo/cuadro + texto, que se parte en líneas si hay MaximumSize.
-        public static Size Medir(ButtonBase c)
-        {
-            int d = Lado(c);
-            int max = c.MaximumSize.Width > 0 ? c.MaximumSize.Width - d - 10 : int.MaxValue;
-            Size t = TextRenderer.MeasureText(c.Text, c.Font, new Size(Math.Max(20, max), int.MaxValue), Flags);
-            return new Size(d + 10 + t.Width, Math.Max(t.Height, d) + 6);
-        }
-
-        public static void Pintar(ButtonBase c, Graphics g, bool marcado, bool redondo, bool foco)
-        {
-            g.Clear(c.BackColor);
-            int d = Lado(c), ancho = Math.Max(20, c.Width - d - 10);
-            Size t = TextRenderer.MeasureText(g, c.Text, c.Font, new Size(ancho, int.MaxValue), Flags);
-            int arriba = Math.Max(0, (c.Height - t.Height) / 2);
-            float x = 1.5f, y = arriba + (Math.Min(t.Height, c.Font.Height) - d) / 2f;   // a la altura de la primera línea
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            Color borde = !c.Enabled ? C.Line : marcado ? C.Accent : C.LineStrong;
-            Color relleno = marcado && c.Enabled && !redondo ? C.Accent : C.Bg;
-            using (var b = new SolidBrush(relleno))
-            using (var p = new Pen(borde, 1.5f))
-            {
-                if (redondo) { g.FillEllipse(b, x, y, d, d); g.DrawEllipse(p, x, y, d, d); }
-                else { g.FillRectangle(b, x, y, d, d); g.DrawRectangle(p, x, y, d, d); }
-            }
-            if (marcado)
-            {
-                Color punto = c.Enabled ? (redondo ? C.Accent : Color.White) : C.LineStrong;
-                if (redondo) using (var b = new SolidBrush(punto)) g.FillEllipse(b, x + d * 0.25f, y + d * 0.25f, d * 0.5f, d * 0.5f);
-                else using (var p = new Pen(punto, 2f)) g.DrawLines(p, new[] { new PointF(x + d * 0.2f, y + d * 0.52f), new PointF(x + d * 0.42f, y + d * 0.74f), new PointF(x + d * 0.8f, y + d * 0.28f) });
-            }
-            TextRenderer.DrawText(g, c.Text, c.Font, new Rectangle(d + 8, arriba, ancho, t.Height), c.Enabled ? c.ForeColor : C.Ink3, Flags);
-            if (foco) ControlPaint.DrawFocusRectangle(g, new Rectangle(d + 5, Math.Max(0, arriba - 2), Math.Min(t.Width + 6, c.Width - d - 5), Math.Min(c.Height, t.Height + 4)), C.Ink, c.BackColor);
-        }
-    }
-
-    class Opcion : RadioButton
-    {
-        public Opcion() { SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true); }
-        public override Size GetPreferredSize(Size propuesto) { return Marca.Medir(this); }
-        protected override void OnPaint(PaintEventArgs e) { Marca.Pintar(this, e.Graphics, Checked, true, Focused && ShowFocusCues); }
-    }
-
-    class Casilla : CheckBox
-    {
-        public Casilla() { SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true); }
-        public override Size GetPreferredSize(Size propuesto) { return Marca.Medir(this); }
-        protected override void OnPaint(PaintEventArgs e) { Marca.Pintar(this, e.Graphics, Checked, false, Focused && ShowFocusCues); }
     }
 
     class Item
@@ -200,7 +99,7 @@ namespace VideoLite
         public Edicion Ed;                     // edición del editor (cuenta solo con el editor activo)
     }
 
-    public partial class Ventana : Form
+    public partial class Ventana : VentanaAero
     {
         static readonly CultureInfo CI = CultureInfo.InvariantCulture;
         readonly Ajustes aj = new Ajustes();
@@ -210,15 +109,16 @@ namespace VideoLite
         string ultimaCarpeta, estadoFinal;
 
         ListView lista;
+        Panel marcoLista;
         NumericUpDown tam;
-        TrackBar barraTam;
+        Deslizador barraTam;
         ComboBox cbDestino, cbFormato, cbRotar;
         Label estGrande, estLinea1, estLinea2, estado, avisoFfmpeg, ayudaSoloAudio, lblPie;
-        Button btnIr, btnCancelar, btnAbrir, btnTema, btnIdioma, btnMas, btnCarpeta;
+        Button btnIr, btnCancelar, btnAbrir, btnTema, btnIdioma, btnMas, btnCarpeta, btnKofi;
         LinkLabel lnkEnviarA;
         FlowLayoutPanel panelMas;
         ProgressBar progreso;
-        Casilla chkFix, chkVoz, chkJunto, chkSinAudio, chkAvisar;
+        CasillaAero chkFix, chkVoz, chkJunto, chkSinAudio, chkAvisar;
         TextBox txtCarpeta;
         Panel panelAjustes;
         TableLayoutPanel cuerpo, marcoAjustes;
@@ -228,7 +128,7 @@ namespace VideoLite
         readonly List<FlowLayoutPanel> seccionesAjustes = new List<FlowLayoutPanel>();
         readonly List<Tuple<Label, Control[]>> ayudasAjustes = new List<Tuple<Label, Control[]>>();
         readonly ToolTip globos = new ToolTip { AutoPopDelay = 15000, InitialDelay = 400 };
-        readonly List<Opcion> radiosRes = new List<Opcion>(), radiosVel = new List<Opcion>();
+        readonly List<OpcionAero> radiosRes = new List<OpcionAero>(), radiosVel = new List<OpcionAero>();
         Font fBase, fBold, fTitulo, fGrande, fSec, fChico;
 
         // Controles cuyo texto sale del diccionario: se vuelven a escribir al cambiar de idioma.
@@ -250,21 +150,21 @@ namespace VideoLite
         public Ventana(string[] args)
         {
             argsIniciales = args ?? new string[0];
-            C.Aplicar(Preferencias.Get("tema", "claro") == "oscuro");
+            Paleta.Aplicar(Preferencias.Get("tema", "claro") == "oscuro");
             Tx.Idioma = Preferencias.Get("idioma", CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "es" ? "es" : "en");
 
-            string disp = FontFamily.Families.Any(f => f.Name == "Bahnschrift") ? "Bahnschrift SemiBold" : "Segoe UI Semibold";
+            // Segoe UI en todo, como Zedran Aero (los títulos en negrita)
             fBase = new Font("Segoe UI", 10f);
             fBold = new Font("Segoe UI Semibold", 10f);
             fChico = new Font("Segoe UI", 9f);
-            fSec = new Font(disp, 12f);
-            fTitulo = new Font(disp, 18f);
-            fGrande = new Font(disp, 26f);
+            fSec = new Font("Segoe UI", 12f, FontStyle.Bold);
+            fTitulo = new Font("Segoe UI", 18f, FontStyle.Bold);
+            fGrande = new Font("Segoe UI Semibold", 26f);
 
             Text = "Video Lite · by Zedran Labs";
             Font = fBase;
-            BackColor = C.Bg;
-            ForeColor = C.Ink;
+            BackColor = Paleta.Fondo;   // debajo de la foto que pinta VentanaAero (con el tema de las preferencias)
+            ForeColor = Paleta.Ink;
             AutoScaleMode = AutoScaleMode.Dpi;
             AutoScaleDimensions = new SizeF(96f, 96f);
             MinimumSize = new Size(800, 600);
@@ -275,7 +175,8 @@ namespace VideoLite
             DragEnter += AlArrastrar;
             DragDrop += AlSoltar;
 
-            var raiz = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(20, 12, 20, 8), BackColor = C.Bg };
+            // Todo es transparente hasta la ventana, que pinta la foto; encima van los paneles de vidrio.
+            var raiz = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5, Padding = new Padding(20, 10, 20, 10), BackColor = Color.Transparent };
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -283,26 +184,31 @@ namespace VideoLite
             raiz.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             Controls.Add(raiz);
 
-            // Encabezado: marca a la izquierda; idioma y tema a la derecha
-            var cab = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1, Margin = new Padding(0, 0, 0, 6) };
+            // Encabezado (vidrio): marca a la izquierda; idioma y tema a la derecha, en orbes [HERRAMIENTA]
+            var cab = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1, Margin = new Padding(0, 0, 0, 10), Padding = new Padding(16, 4, 10, 4) };
+            Aero.Vidrio(cab, true);
             cab.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             cab.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            var marca = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+            var marca = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0), Anchor = AnchorStyles.Left };
             marca.Controls.Add(new Label { Text = "Video Lite", Font = fTitulo, AutoSize = true, Margin = new Padding(0, 0, 8, 0) });
-            marca.Controls.Add(L(new Label { ForeColor = C.Ink3, AutoSize = true, Margin = new Padding(0, 12, 0, 0) }, "appBy"));
-            var acciones = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0), Anchor = AnchorStyles.Right | AnchorStyles.Top };
-            btnIdioma = L(Boton("", false, (s, e) => CambiarIdioma()), "otroIdioma");
-            btnTema = Boton(C.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro"), false, (s, e) => CambiarTema());
-            foreach (var b in new[] { btnIdioma, btnTema }) { b.Font = fChico; b.Margin = new Padding(8, 6, 0, 0); acciones.Controls.Add(b); }
+            marca.Controls.Add(L(new Label { ForeColor = Paleta.Ink2, AutoSize = true, Margin = new Padding(0, 12, 0, 0) }, "appBy"));
+            var acciones = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0), Anchor = AnchorStyles.Right };
+            btnIdioma = L(Boton("", TipoBoton.Herramienta, (s, e) => CambiarIdioma()), "otroIdioma");
+            ((BotonAero)btnIdioma).Icono = IconoBoton.Sigla;   // EN o ES: el otro idioma
+            btnTema = Boton(Paleta.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro"), TipoBoton.Herramienta, (s, e) => CambiarTema());
+            ((BotonAero)btnTema).Icono = IconoBoton.Tema;
+            foreach (var b in new[] { btnIdioma, btnTema }) { b.Margin = new Padding(6, 0, 0, 0); acciones.Controls.Add(b); }
+            ActualizarGlobosCabecera();
             cab.Controls.Add(marca, 0, 0); cab.Controls.Add(acciones, 1, 0);
             raiz.Controls.Add(cab, 0, 0);
 
-            avisoFfmpeg = new Label { AutoSize = true, ForeColor = C.Ink, BackColor = C.AmberSoft, Padding = new Padding(10, 6, 10, 6), Margin = new Padding(0, 0, 0, 8), Visible = false, MaximumSize = new Size(2000, 0) };
+            avisoFfmpeg = new Label { AutoSize = true, ForeColor = Paleta.Ink, BackColor = Paleta.AmberSoft, Padding = new Padding(10, 6, 10, 6), Margin = new Padding(0, 0, 0, 10), Visible = false, MaximumSize = new Size(2000, 0) };
             raiz.Controls.Add(avisoFfmpeg, 0, 1);
 
-            // "Activar editor": antes de los controles, como en la web; despliega el editor en lugar de la lista
-            var filaEditor = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };
-            chkEditor = L(new Casilla { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 8, 0) }, "edActivar");
+            // "Activar editor" (vidrio, del ancho de su texto): antes de los controles, como en la web; despliega el editor
+            var filaEditor = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 10), Padding = new Padding(12, 5, 16, 5) };
+            Aero.Vidrio(filaEditor, false);
+            chkEditor = L(new CasillaAero { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 8, 0) }, "edActivar");
             chkEditor.CheckedChanged += (s, e) => AlternarEditor();
             filaEditor.Controls.Add(chkEditor);
             var ayudaEditor = Ayuda("edActivarAyuda"); ayudaEditor.Margin = new Padding(0, 3, 0, 0);
@@ -317,11 +223,15 @@ namespace VideoLite
             cuerpo.Controls.Add(ConstruirVideos(), 0, 0);
             cuerpo.Controls.Add(ConstruirAjustes(), 1, 0);
 
-            var pie = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 8, 0, 0) };
-            lblPie = new Label { ForeColor = C.Ink3, AutoSize = true, Font = fChico, Margin = new Padding(0, 2, 4, 0) };
+            // Pie (vidrio): el café, [SECUNDARIO], y luego los datos y los enlaces, todos a media altura del botón
+            var pie = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Dock = DockStyle.Fill, Margin = new Padding(0, 10, 0, 0), Padding = new Padding(6, 3, 6, 3) };
+            Aero.Vidrio(pie, true);
+            btnKofi = L(Boton("", TipoBoton.Secundario, (s, e) => Abrir("https://ko-fi.com/kierczedran")), "kofi");
+            btnKofi.Font = fChico; btnKofi.Margin = new Padding(0, 0, 8, 0); btnKofi.Padding = new Padding(4, 1, 4, 1);
+            pie.Controls.Add(btnKofi);
+            lblPie = new Label { ForeColor = Paleta.Ink2, AutoSize = true, Font = fChico, Margin = new Padding(0, 0, 4, 0) };
             L(lblPie, "pie", C.Version);
             pie.Controls.Add(lblPie);
-            pie.Controls.Add(L(Enlace("https://ko-fi.com/kierczedran"), "kofi"));
             pie.Controls.Add(Enlace(null, (s, e) => Abrir(Tx.T("urlSitio")), "videolite.zedran.xyz"));   // la página en el idioma de la app
             pie.Controls.Add(L(Enlace("https://discord.com/invite/2ZRbaYDAnR"), "reportar"));
             pie.Controls.Add(Enlace("mailto:Kierc117@hotmail.com?subject=Video%20Lite", null, "Kierc117@hotmail.com"));
@@ -329,15 +239,22 @@ namespace VideoLite
             pie.Controls.Add(L(Enlace(null, (s, e) => MostrarLicencias()), "licencias"));
             lnkEnviarA = Enlace(null, (s, e) => AlternarEnviarA());
             pie.Controls.Add(lnkEnviarA);
+            foreach (Control c in pie.Controls) c.Anchor = AnchorStyles.Left;   // sin arriba ni abajo: centrados en su línea
             raiz.Controls.Add(pie, 0, 4);
 
             actualizando = true; tam.Value = 25; actualizando = false;
             ActualizarEnlaceEnviarA();
             AplicarAuto();
-            HandleCreated += (s, e) => AplicarDetallesWindows();
             Shown += (s, e) => { RevisarFfmpeg(); if (argsIniciales.Length > 0) Agregar(argsIniciales); };
             FormClosing += AlCerrar;
             Refrescar();
+        }
+
+        // Los orbes no llevan texto: su nombre va en el globo (y en el nombre accesible)
+        void ActualizarGlobosCabecera()
+        {
+            ((BotonAero)btnIdioma).Sigla = Tx.Idioma == "es" ? "EN" : "ES";
+            foreach (var b in new[] { btnIdioma, btnTema }) { b.AccessibleName = b.Text; globos.SetToolTip(b, b.Text); b.Invalidate(); }
         }
 
         /* ---------- Construcción ---------- */
@@ -352,62 +269,47 @@ namespace VideoLite
 
         ComboBox Combo(string[] claves, int sel)
         {
-            var cb = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 330, FlatStyle = FlatStyle.Flat, BackColor = C.Bg, ForeColor = C.Ink, Margin = new Padding(0) };
+            var cb = Aero.Campo(new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 330, Margin = new Padding(0, 2, 0, 10) });   // con Aero.ConBorde, el margen pasa a su borde
             foreach (string k in claves) cb.Items.Add(Tx.T(k));
             cb.SelectedIndex = sel;
             combos.Add(Tuple.Create(cb, claves));
             return cb;
         }
 
-        // El ComboBox plano no dibuja borde: va dentro de un panel de 1 px del color de los bordes.
-        static Control ConBorde(ComboBox cb)
-        {
-            var p = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(1), BackColor = C.LineStrong, Margin = new Padding(0, 2, 0, 10) };
-            cb.Location = new Point(1, 1);
-            p.Controls.Add(cb);
-            return p;
-        }
-
         Control ConstruirVideos()
         {
-            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = new Padding(0, 0, 12, 0) };
+            // Panel de vidrio con su barra de título; adentro, los botones y la lista (sólida, con esquinas redondas)
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4, Margin = new Padding(0, 0, 14, 0), Padding = new Padding(2) };
+            Aero.Vidrio(t, true);
             colVideos = t;
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));   // el editor, plegado
-            lblSecVideos = L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 6) }, "secVideos");
+            lblSecVideos = L(new TituloAero { Font = fSec }, "secVideos");
             t.Controls.Add(lblSecVideos, 0, 0);
 
-            var botones = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 6) };
-            btnAgregarVideos = L(Boton("", false, (s, e) => ElegirVideos()), "agregarVideos");
-            btnAgregarCarpeta = L(Boton("", false, (s, e) => ElegirCarpeta()), "agregarCarpeta");
+            var botones = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(14, 10, 14, 6) };
+            btnAgregarVideos = L(Boton("", TipoBoton.Accion, (s, e) => ElegirVideos()), "agregarVideos");
+            btnAgregarCarpeta = L(Boton("", TipoBoton.Accion, (s, e) => ElegirCarpeta()), "agregarCarpeta");
             botones.Controls.Add(btnAgregarVideos);
             botones.Controls.Add(btnAgregarCarpeta);
-            botones.Controls.Add(L(Boton("", false, (s, e) => QuitarSeleccionados()), "quitarSel"));
-            botones.Controls.Add(L(Boton("", false, (s, e) => Limpiar()), "limpiar"));
+            botones.Controls.Add(L(Boton("", TipoBoton.Terciario, (s, e) => QuitarSeleccionados()), "quitarSel"));
+            botones.Controls.Add(L(Boton("", TipoBoton.Terciario, (s, e) => Limpiar()), "limpiar"));
             t.Controls.Add(botones, 0, 1);
 
-            lista = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, ShowItemToolTips = true, HideSelection = false, BorderStyle = BorderStyle.FixedSingle, BackColor = C.Surface, ForeColor = C.Ink, AllowDrop = true };
-            lista.OwnerDraw = true;   // el encabezado se dibuja con la paleta (en oscuro, el de Windows quedaría blanco)
-            lista.DrawColumnHeader += (s, e) =>
-            {
-                using (var fondo = new SolidBrush(C.Surface2)) e.Graphics.FillRectangle(fondo, e.Bounds);
-                using (var linea = new Pen(C.Line)) e.Graphics.DrawLine(linea, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
-                TextRenderer.DrawText(e.Graphics, e.Header.Text, fBold, new Rectangle(e.Bounds.X + 6, e.Bounds.Y, e.Bounds.Width - 8, e.Bounds.Height), C.Ink,
-                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
-            };
-            lista.DrawItem += (s, e) => { e.DrawDefault = true; };
-            lista.DrawSubItem += (s, e) => { e.DrawDefault = true; };
+            // La lista es de Windows (sólida): va en su tarjeta, con el encabezado de la paleta y las esquinas redondas
+            lista = new ListView { View = View.Details, FullRowSelect = true, ShowItemToolTips = true, HideSelection = false, AllowDrop = true };
+            marcoLista = Aero.TarjetaLista(lista);
             foreach (string k in ColKeys) lista.Columns.Add(Tx.T(k), 120);
             lista.DragEnter += AlArrastrar;
             lista.DragDrop += AlSoltar;
             lista.KeyDown += (s, e) => { if (e.KeyCode == Keys.Delete) QuitarSeleccionados(); };
             lista.DoubleClick += (s, e) => AbrirSeleccion();
             lista.Resize += (s, e) => AjustarColumnas();
-            t.Controls.Add(lista, 0, 2);
+            t.Controls.Add(marcoLista, 0, 2);
 
-            var vacio = L(new Label { ForeColor = C.Ink3, AutoSize = true, BackColor = C.Surface, Tag = "vacio" }, "vacio");
+            var vacio = L(new Label { ForeColor = Paleta.Ink3, AutoSize = true, BackColor = Paleta.Surface, Tag = "vacio" }, "vacio");
             lista.Controls.Add(vacio);
             vacio.Location = new Point(16, 40);
             var editor = ConstruirEditor();
@@ -418,35 +320,37 @@ namespace VideoLite
 
         Control ConstruirAjustes()
         {
-            var marco = marcoAjustes = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, BackColor = C.Surface, Margin = new Padding(0), Padding = new Padding(1) };
+            // Panel de vidrio: la barra de título (fija), los ajustes (se desplazan) y la parte fija (estimado y Procesar)
+            var marco = marcoAjustes = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Margin = new Padding(0), Padding = new Padding(2) };
+            Aero.Vidrio(marco, true);
+            marco.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             marco.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             marco.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            marco.Paint += (s, e) => { using (var p = new Pen(C.Line)) e.Graphics.DrawRectangle(p, 0, 0, marco.Width - 1, marco.Height - 1); };
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = C.Surface, Padding = new Padding(16, 12, 16, 4), AutoScroll = true, Margin = new Padding(0) };
+            lblSecAjustes = L(new TituloAero { Font = fSec }, "secAjustes");
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 12, 16, 4), AutoScroll = true, Margin = new Padding(0) };
             panelAjustes = panel;
-            var f = flujoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Top, BackColor = C.Surface };
+            var f = flujoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Top, BackColor = Color.Transparent };
             panel.Controls.Add(f);
-            var fijo = fijoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Fill, BackColor = C.Surface, Padding = new Padding(16, 4, 16, 12), Margin = new Padding(0) };
-            marco.Controls.Add(panel, 0, 0);
-            marco.Controls.Add(fijo, 0, 1);
+            var fijo = fijoAjustes = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Dock = DockStyle.Fill, BackColor = Color.Transparent, Padding = new Padding(16, 4, 16, 12), Margin = new Padding(0) };
+            marco.Controls.Add(lblSecAjustes, 0, 0);
+            marco.Controls.Add(panel, 0, 1);
+            marco.Controls.Add(fijo, 0, 2);
             // Solo a las etiquetas y a las secciones: con MaximumSize, el ComboBox pierde su alto en el FlowLayoutPanel.
             panel.Resize += (s, e) => AjustarAjustes();
 
-            lblSecAjustes = L(new Label { Font = fSec, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, "secAjustes");
-            f.Controls.Add(lblSecAjustes);
             FlowLayoutPanel sec;   // cada grupo va en su sección: debajo del editor se acomodan en columnas
 
             // Tamaño: destino + deslizador + número
             sec = Seccion();
             sec.Controls.Add(Leyenda("legTam"));
-            sec.Controls.Add(L(new Label { AutoSize = true, ForeColor = C.Ink2, Font = fChico, Margin = new Padding(0, 0, 0, 0) }, "paraEnviar"));
+            sec.Controls.Add(L(new Label { AutoSize = true, ForeColor = Paleta.Ink2, Font = fChico, Margin = new Padding(0, 0, 0, 0) }, "paraEnviar"));
             cbDestino = Combo(DestKeys, DEST_AUTO);
             cbDestino.SelectedIndexChanged += (s, e) => { if (!actualizando) CambioDestino(); };
-            sec.Controls.Add(ConBorde(cbDestino));
+            sec.Controls.Add(Aero.ConBorde(cbDestino));
             var filaTam = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 10) };
-            barraTam = new TrackBar { Minimum = 0, Maximum = 1000, TickStyle = TickStyle.None, Width = 220, BackColor = C.Surface, Margin = new Padding(0, 4, 8, 0) };
+            barraTam = new Deslizador { Minimum = 0, Maximum = 1000, SmallChange = 10, LargeChange = 100, Width = 220, Margin = new Padding(0, 2, 8, 0) };
             barraTam.Scroll += (s, e) => { if (!actualizando) PonerTam(DesdeBarra(barraTam.Value), true); };
-            tam = new NumericUpDown { DecimalPlaces = 1, Minimum = 0.5m, Maximum = (decimal)Motor.MaxMB, Increment = 1, Width = 90, TextAlign = HorizontalAlignment.Right, Font = fBold, Margin = new Padding(0, 4, 4, 0), BackColor = C.Bg, ForeColor = C.Ink };
+            tam = new NumericUpDown { DecimalPlaces = 1, Minimum = 0.5m, Maximum = (decimal)Motor.MaxMB, Increment = 1, Width = 90, TextAlign = HorizontalAlignment.Right, Font = fBold, Margin = new Padding(0, 4, 4, 0), BackColor = Paleta.Bg, ForeColor = Paleta.Ink };
             tam.ValueChanged += (s, e) => { if (!actualizando) PonerTam((double)tam.Value, true); };
             filaTam.Controls.Add(barraTam); filaTam.Controls.Add(tam);
             filaTam.Controls.Add(new Label { Text = "MB", AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 0, 0) });
@@ -458,7 +362,7 @@ namespace VideoLite
             var filaRes = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             foreach (var r in new[] { Tuple.Create("1080p", 1080), Tuple.Create("720p", 720), Tuple.Create("480p", 480), Tuple.Create("360p", 360) }.Reverse().Concat(new[] { Tuple.Create("", 0) }).Reverse())
             {
-                var rb = new Opcion { Text = r.Item1, Tag = r.Item2, AutoSize = true, Checked = r.Item2 == 0, Margin = new Padding(0, 0, 10, 0) };
+                var rb = new OpcionAero { Text = r.Item1, Tag = r.Item2, AutoSize = true, Checked = r.Item2 == 0, Margin = new Padding(0, 0, 4, 2) };
                 if (r.Item2 == 0) L(rb, "resOriginal");
                 rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.Res = (int)((RadioButton)s).Tag; Cambio(); } };
                 radiosRes.Add(rb); filaRes.Controls.Add(rb);
@@ -471,7 +375,7 @@ namespace VideoLite
             var filaVel = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
             foreach (var v in new[] { 0.5, 1, 1.5, 2 })
             {
-                var rb = new Opcion { Text = "×" + v.ToString(CI), Tag = v, AutoSize = true, Checked = v == 1, Margin = new Padding(0, 0, 10, 0) };
+                var rb = new OpcionAero { Text = "×" + v.ToString(CI), Tag = v, AutoSize = true, Checked = v == 1, Margin = new Padding(0, 0, 4, 2) };
                 rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.Speed = (double)((RadioButton)s).Tag; Cambio(); } };
                 radiosVel.Add(rb); filaVel.Controls.Add(rb);
             }
@@ -481,67 +385,68 @@ namespace VideoLite
             // Audio
             sec = Seccion();
             sec.Controls.Add(Leyenda("legAudio"));
-            chkFix = L(new Casilla { Font = fBold, Checked = true, AutoSize = true, Margin = new Padding(0) }, "fixAudio");
+            chkFix = L(new CasillaAero { Font = fBold, Checked = true, AutoSize = true, Margin = new Padding(0) }, "fixAudio");
             chkFix.CheckedChanged += (s, e) => { aj.Fix = chkFix.Checked; };
             sec.Controls.Add(chkFix);
             sec.Controls.Add(AyudaAjuste("helpFix", chkFix));
-            chkVoz = L(new Casilla { Font = fBold, AutoSize = true, Margin = new Padding(0) }, "mejorarVoz");
+            chkVoz = L(new CasillaAero { Font = fBold, AutoSize = true, Margin = new Padding(0) }, "mejorarVoz");
             chkVoz.CheckedChanged += (s, e) => { aj.Voz = chkVoz.Checked; };
             sec.Controls.Add(chkVoz);
             sec.Controls.Add(AyudaAjuste("helpVoz", chkVoz));
 
             // Más opciones (plegable): formato, giro, sin audio, aviso al terminar (en la sección del audio)
-            btnMas = L(Boton("", false, (s, e) => { panelMas.Visible = !panelMas.Visible; ActualizarBotonMas(); AjustarAltoAjustes(); }), "masOpciones");
+            btnMas = L(Boton("", TipoBoton.Terciario, (s, e) => { panelMas.Visible = !panelMas.Visible; ActualizarBotonMas(); AjustarAltoAjustes(); }), "masOpciones");
             btnMas.Font = fChico;
             sec.Controls.Add(btnMas);
-            panelMas = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = new Padding(0, 4, 0, 8), BackColor = C.Surface };
+            panelMas = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, Visible = false, Margin = new Padding(0, 4, 0, 8), BackColor = Color.Transparent };
             panelMas.Controls.Add(Leyenda("legFormato"));
             cbFormato = Combo(FmtKeys, 0);
             cbFormato.SelectedIndexChanged += (s, e) => { aj.Formato = FmtVals[cbFormato.SelectedIndex]; Cambio(); };
-            panelMas.Controls.Add(ConBorde(cbFormato));
+            panelMas.Controls.Add(Aero.ConBorde(cbFormato));
             ayudaSoloAudio = Ayuda("helpSoloAudio"); ayudaSoloAudio.Visible = false;
             panelMas.Controls.Add(ayudaSoloAudio);
             panelMas.Controls.Add(Leyenda("legGirar"));
             cbRotar = Combo(RotKeys, 0);
             cbRotar.SelectedIndexChanged += (s, e) => { aj.Rotacion = RotVals[cbRotar.SelectedIndex]; Refrescar(); };
-            panelMas.Controls.Add(ConBorde(cbRotar));
-            chkSinAudio = L(new Casilla { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "sinAudio");
+            panelMas.Controls.Add(Aero.ConBorde(cbRotar));
+            chkSinAudio = L(new CasillaAero { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "sinAudio");
             chkSinAudio.CheckedChanged += (s, e) => { aj.SinAudio = chkSinAudio.Checked; Cambio(); };
             panelMas.Controls.Add(chkSinAudio);
-            chkAvisar = L(new Casilla { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "avisar");
+            chkAvisar = L(new CasillaAero { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "avisar");
             panelMas.Controls.Add(chkAvisar);
             sec.Controls.Add(panelMas);
 
             // Guardar en
             sec = Seccion();
             sec.Controls.Add(Leyenda("legGuardar"));
-            chkJunto = L(new Casilla { Checked = true, AutoSize = true, Margin = new Padding(0) }, "junto");
+            chkJunto = L(new CasillaAero { Checked = true, AutoSize = true, Margin = new Padding(0) }, "junto");
             var filaCarp = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 4, 0, 10) };
-            txtCarpeta = new TextBox { Width = 260, Enabled = false, BackColor = C.Bg, ForeColor = C.Ink, Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Video Lite") };
-            btnCarpeta = L(Boton("", false, (s, e) => ElegirSalida()), "cambiar");
+            txtCarpeta = new TextBox { Width = 260, Enabled = false, BackColor = Paleta.Bg, ForeColor = Paleta.Ink, Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Video Lite") };
+            btnCarpeta = L(Boton("", TipoBoton.Terciario, (s, e) => ElegirSalida()), "cambiar");
             btnCarpeta.Enabled = false;
             chkJunto.CheckedChanged += (s, e) => { txtCarpeta.Enabled = btnCarpeta.Enabled = !chkJunto.Checked; };
             filaCarp.Controls.Add(txtCarpeta); filaCarp.Controls.Add(btnCarpeta);
             sec.Controls.Add(chkJunto); sec.Controls.Add(filaCarp);
 
             // Parte fija: estimado, botón, progreso
-            var sep = sepAjustes = new Label { AutoSize = false, Height = 1, Width = 400, BackColor = C.Line, Margin = new Padding(0, 0, 0, 8) };
+            var sep = sepAjustes = new Label { AutoSize = false, Height = 1, Width = 400, BackColor = Paleta.Line, Margin = new Padding(0, 0, 0, 8) };
             fijo.Controls.Add(sep);
             estGrande = new Label { Text = "", Font = fGrande, AutoSize = true, Margin = new Padding(0) };
-            estLinea1 = new Label { Text = "", ForeColor = C.Ink2, AutoSize = true, Margin = new Padding(0, 2, 0, 0) };
-            estLinea2 = new Label { Text = "", ForeColor = C.Ink2, AutoSize = true, Margin = new Padding(0, 2, 0, 8) };
+            estLinea1 = new Label { Text = "", ForeColor = Paleta.Ink2, AutoSize = true, Margin = new Padding(0, 2, 0, 0) };
+            estLinea2 = new Label { Text = "", ForeColor = Paleta.Ink2, AutoSize = true, Margin = new Padding(0, 2, 0, 8) };
             fijo.Controls.Add(estGrande); fijo.Controls.Add(estLinea1); fijo.Controls.Add(estLinea2);
             var acciones = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 6) };
-            btnIr = Boton("", true, (s, e) => Iniciar());
+            btnIr = Boton("", TipoBoton.Principal, (s, e) => Iniciar());
             btnIr.Font = fSec; btnIr.Padding = new Padding(18, 6, 18, 6);
-            btnCancelar = L(Boton("", false, (s, e) => Cancelar()), "cancelar");
+            btnCancelar = L(Boton("", TipoBoton.Accion, (s, e) => Cancelar()), "cancelar");
             btnCancelar.Visible = false;
-            btnAbrir = L(Boton("", false, (s, e) => AbrirCarpeta()), "abrirCarpeta");
+            btnAbrir = L(Boton("", TipoBoton.Secundario, (s, e) => AbrirCarpeta()), "abrirCarpeta");
             btnAbrir.Visible = false;
+            foreach (var b in new[] { btnCancelar, btnAbrir }) b.Anchor = AnchorStyles.Left;   // a media altura del grande
             acciones.Controls.Add(btnIr); acciones.Controls.Add(btnCancelar); acciones.Controls.Add(btnAbrir);
             fijo.Controls.Add(acciones);
-            progreso = new ProgressBar { Width = 400, Height = 10, Maximum = 1000, Visible = false, Margin = new Padding(0, 0, 0, 4) };
-            estado = new Label { Text = "", ForeColor = C.Ink2, AutoSize = true, Margin = new Padding(0) };
+            progreso = new BarraAero { Width = 400, Height = 12, Maximum = 1000, Visible = false, Margin = new Padding(0, 0, 0, 6) };
+            estado = new Label { Text = "", ForeColor = Paleta.Ink2, AutoSize = true, Margin = new Padding(0) };
             fijo.Controls.Add(progreso); fijo.Controls.Add(estado);
             estado.Visible = false;   // sin texto no ocupa alto; aparece con el primer mensaje
             estado.TextChanged += (s, e) => estado.Visible = estado.Text != "";
@@ -574,7 +479,7 @@ namespace VideoLite
 
         FlowLayoutPanel Seccion()
         {
-            var sec = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = C.Surface, Margin = new Padding(0, 0, 12, 0) };
+            var sec = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.Transparent, Margin = new Padding(0, 0, 12, 0) };
             flujoAjustes.Controls.Add(sec);
             seccionesAjustes.Add(sec);
             return sec;
@@ -610,21 +515,23 @@ namespace VideoLite
                 cuerpo.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
                 colVideos.Margin = new Padding(0, 0, 12, 0);
             }
-            marcoAjustes.ColumnCount = 2; marcoAjustes.RowCount = 2;
-            marcoAjustes.SetCellPosition(fijoAjustes, abajo ? new TableLayoutPanelCellPosition(1, 0) : new TableLayoutPanelCellPosition(0, 1));
+            // Fila 0: la barra de título (oculta abajo del editor); fila 1: los ajustes y, abajo del editor, a su derecha lo fijo
+            marcoAjustes.ColumnCount = 2; marcoAjustes.RowCount = 3;
+            marcoAjustes.SetColumnSpan(lblSecAjustes, abajo ? 2 : 1);
+            marcoAjustes.SetCellPosition(fijoAjustes, abajo ? new TableLayoutPanelCellPosition(1, 1) : new TableLayoutPanelCellPosition(0, 2));
             marcoAjustes.ColumnStyles.Clear(); marcoAjustes.RowStyles.Clear();
+            marcoAjustes.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            marcoAjustes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             if (abajo)
             {
-                marcoAjustes.RowCount = 1;
+                marcoAjustes.RowCount = 2;
                 marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
                 marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, AnchoFijo));
-                marcoAjustes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             }
             else
             {
                 marcoAjustes.ColumnCount = 1;
                 marcoAjustes.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-                marcoAjustes.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
                 marcoAjustes.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             }
             flujoAjustes.FlowDirection = abajo ? FlowDirection.LeftToRight : FlowDirection.TopDown;
@@ -633,7 +540,7 @@ namespace VideoLite
             sepAjustes.Visible = !abajo;       // la raya separa el estimado de los ajustes de arriba; abajo van lado a lado
             barraTam.Width = abajo ? 160 : 220;   // en columnas: que quepan el número y "MB"
             for (int i = 0; i < radiosRes.Count; i++)     // y las cinco calidades en una línea
-                radiosRes[i].Margin = new Padding(0, 0, i == radiosRes.Count - 1 ? 0 : abajo ? 5 : 10, 0);
+                radiosRes[i].Margin = new Padding(0, 0, i == radiosRes.Count - 1 ? 0 : abajo ? 1 : 4, 2);
             txtCarpeta.Width = abajo ? 200 : 260;
             foreach (var a in ayudasAjustes) a.Item1.Visible = !abajo;
             ActualizarGlobos();
@@ -660,7 +567,7 @@ namespace VideoLite
                 sec.MaximumSize = editorOn ? new Size(col, 0) : Size.Empty;
             }
             int etiqueta = editorOn ? col - 4 : Math.Max(200, panelAjustes.ClientSize.Width - 36);
-            foreach (Control c in Descendientes(flujoAjustes)) if (c is Label || c is Casilla) c.MaximumSize = new Size(etiqueta, 0);
+            foreach (Control c in Descendientes(flujoAjustes)) if (c is Label || c is CasillaAero) c.MaximumSize = new Size(etiqueta, 0);
             // Las filas de calidades y velocidades se parten a este ancho; sin tope, se quedan partidas al ancho de un acomodo anterior.
             foreach (var fila in new[] { radiosRes[0].Parent, radiosVel[0].Parent }) fila.MaximumSize = new Size(editorOn ? col : etiqueta, 0);
         }
@@ -670,30 +577,28 @@ namespace VideoLite
         void AjustarAltoAjustes()
         {
             if (!editorOn || cuerpo == null || cuerpo.RowStyles.Count < 2) return;
-            int an = Math.Max(200, marcoAjustes.Width - AnchoFijo - panelAjustes.Padding.Horizontal - 8);
-            int contenido = flujoAjustes.GetPreferredSize(new Size(an, 0)).Height + panelAjustes.Padding.Vertical + 8;
-            int boton = fijoAjustes.GetPreferredSize(new Size(AnchoFijo, 0)).Height + 4;
+            int an = Math.Max(200, marcoAjustes.Width - AnchoFijo - panelAjustes.Padding.Horizontal - marcoAjustes.Padding.Horizontal - 8);
+            int contenido = flujoAjustes.GetPreferredSize(new Size(an, 0)).Height + panelAjustes.Padding.Vertical + marcoAjustes.Padding.Vertical + 8;
+            int boton = fijoAjustes.GetPreferredSize(new Size(AnchoFijo, 0)).Height + marcoAjustes.Padding.Vertical + 4;
             int alto = Math.Max(fBase.Height * 6, Math.Max(Math.Min(contenido, (int)(cuerpo.Height * 0.30)), boton));
             if (Math.Abs(cuerpo.RowStyles[1].Height - alto) > 2) cuerpo.RowStyles[1].Height = alto;
         }
 
         Label Leyenda(string clave) { return L(new Label { Font = fBold, AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, clave); }
-        Label Ayuda(string clave) { return L(new Label { ForeColor = C.Ink3, Font = fChico, AutoSize = true, Margin = new Padding(0, 2, 0, 10) }, clave); }
+        Label Ayuda(string clave) { return L(new Label { ForeColor = Paleta.Ink3, Font = fChico, AutoSize = true, Margin = new Padding(0, 2, 0, 10) }, clave); }
 
-        Button Boton(string t, bool primario, EventHandler click)
+        // Uno de los cinco tipos de botón de Zedran Aero (Aero.cs)
+        Button Boton(string t, TipoBoton tipo, EventHandler click)
         {
-            var b = new Button { Text = t, AutoSize = true, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Margin = new Padding(0, 0, 8, 4), Padding = new Padding(8, 3, 8, 3) };
-            b.FlatAppearance.BorderColor = primario ? C.Accent : C.LineStrong;
-            b.BackColor = primario ? C.Accent : C.Bg;
-            b.ForeColor = primario ? Color.White : C.Ink;
+            var b = new BotonAero(tipo) { Text = t, AutoSize = true, Margin = new Padding(0, 0, 4, 4), Padding = new Padding(8, 3, 8, 3) };
             b.Click += click;
             return b;
         }
 
+        // Enlace: el texto del color normal y el subrayado verde (EnlaceAero); con url, la abre al hacer clic
         LinkLabel Enlace(string url, EventHandler click = null, string texto = null)
         {
-            var l = new LinkLabel { Text = texto ?? "", AutoSize = true, Font = fChico, LinkColor = C.AccentText, ActiveLinkColor = C.Accent, Margin = new Padding(0, 2, 8, 0) };
-            if (url != null) l.LinkClicked += (s, e) => Abrir(url);
+            var l = new EnlaceAero { Text = texto ?? "", Font = fChico, Url = url };
             if (click != null) l.LinkClicked += (s, e) => click(s, e);
             return l;
         }
@@ -718,7 +623,8 @@ namespace VideoLite
             }
             actualizando = false;
             for (int i = 0; i < ColKeys.Length; i++) lista.Columns[i].Text = Tx.T(ColKeys[i]);
-            btnTema.Text = C.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro");
+            btnTema.Text = Paleta.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro");
+            ActualizarGlobosCabecera();
             ActualizarBotonMas();
             ActualizarEnlaceEnviarA();
             if (avisoFfmpeg.Visible) avisoFfmpeg.Text = Tx.T("ffmpegFalta");
@@ -731,48 +637,19 @@ namespace VideoLite
             lista.Invalidate();
         }
 
+        // Aero.CambiarTema cambia cada color de la paleta por el del otro tema (también en la lista), la barra de título y
+        // las barras de desplazamiento.
         void CambiarTema()
         {
-            Color[] antes = C.Tokens();
-            C.Aplicar(!C.Oscuro);
-            Color[] despues = C.Tokens();
-            var mapa = new Dictionary<int, Color>();
-            for (int i = 0; i < antes.Length; i++) if (!mapa.ContainsKey(antes[i].ToArgb())) mapa[antes[i].ToArgb()] = despues[i];
             SuspendLayout();
-            Recolorear(this, mapa);
-            foreach (ListViewItem lv in lista.Items) { Color c; if (mapa.TryGetValue(lv.ForeColor.ToArgb(), out c)) lv.ForeColor = c; }
-            btnTema.Text = C.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro");
+            Aero.CambiarTema(this, !Paleta.Oscuro);
+            btnTema.Text = Paleta.Oscuro ? Tx.T("temaClaro") : Tx.T("temaOscuro");
+            ActualizarGlobosCabecera();
             ResumeLayout(true);
-            Preferencias.Set("tema", C.Oscuro ? "oscuro" : "claro");
-            AplicarDetallesWindows();
+            Preferencias.Set("tema", Paleta.Oscuro ? "oscuro" : "claro");
             Refrescar();
             EdPintar();
             Invalidate(true);
-        }
-
-        // Cambia cada color de la paleta vieja por el mismo token de la nueva, en todo el árbol de controles.
-        static void Recolorear(Control c, Dictionary<int, Color> mapa)
-        {
-            Color n;
-            if (mapa.TryGetValue(c.BackColor.ToArgb(), out n)) c.BackColor = n;
-            if (mapa.TryGetValue(c.ForeColor.ToArgb(), out n)) c.ForeColor = n;
-            var b = c as Button;
-            if (b != null && mapa.TryGetValue(b.FlatAppearance.BorderColor.ToArgb(), out n)) b.FlatAppearance.BorderColor = n;
-            var l = c as LinkLabel;
-            if (l != null)
-            {
-                if (mapa.TryGetValue(l.LinkColor.ToArgb(), out n)) l.LinkColor = n;
-                if (mapa.TryGetValue(l.ActiveLinkColor.ToArgb(), out n)) l.ActiveLinkColor = n;
-            }
-            foreach (Control h in c.Controls) Recolorear(h, mapa);
-        }
-
-        void AplicarDetallesWindows()
-        {
-            Win.TituloOscuro(this, C.Oscuro);
-            if (lista != null) Win.Barras(lista, C.Oscuro);
-            if (panelAjustes != null) Win.Barras(panelAjustes, C.Oscuro);
-            if (edCaja != null) Win.Barras(edCaja, C.Oscuro);
         }
 
         /* ---------- "Enviar a" de Windows ---------- */
@@ -998,6 +875,7 @@ namespace VideoLite
                 int v = (int)rb.Tag;
                 bool muyGrande = v != 0 && v >= maxCorto;
                 rb.Enabled = !trabajando && !solo && !muyGrande;
+                rb.Tachada = solo || muyGrande;
                 if (muyGrande && rb.Checked) radiosRes[0].Checked = true;
             }
             foreach (var rb in radiosVel) rb.Enabled = !trabajando;
@@ -1011,7 +889,7 @@ namespace VideoLite
                 var sub = it.Lv.SubItems;
                 if (it.Info != null)
                     sub[1].Text = Mb(it.Size) + " · " + Dur(it.Info.Dur) + " · " + it.Info.W + "×" + it.Info.H + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
-                if (it.Estado == "error") { sub[4].Text = it.Error; it.Lv.ForeColor = C.Danger; continue; }
+                if (it.Estado == "error") { sub[4].Text = it.Error; it.Lv.ForeColor = Paleta.Danger; continue; }
                 if (it.Estado == "hecho" || it.Estado == "trabajando" || it.Info == null) continue;
                 var ed = EdicionDe(it);
                 it.Plan = Motor.Planear(it.Info, it.Size, aj, ed != null ? ed.Duracion() : it.Info.Dur);
@@ -1023,7 +901,7 @@ namespace VideoLite
                     sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
                     sub[3].Text = Tx.T("soloAudio", aj.Formato.ToUpperInvariant());
                     sub[4].Text = Tx.T("porComprimir", aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
-                    it.Lv.ForeColor = C.Ink;
+                    it.Lv.ForeColor = Paleta.Ink;
                     antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                     continue;
                 }
@@ -1032,7 +910,7 @@ namespace VideoLite
                 sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
                 sub[3].Text = Motor.Calidad(it.Plan, out nivel);
                 sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "×" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
-                it.Lv.ForeColor = C.Ink;
+                it.Lv.ForeColor = Paleta.Ink;
                 antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                 if (peor == null || it.Plan.Bpp < peor.Bpp) peor = it.Plan;
             }
@@ -1046,7 +924,7 @@ namespace VideoLite
                 estGrande.Text = Tx.T(hechos.Count > 1 ? "estTotal" : "estUno", Mb(a1)).Replace("≈ ", "");
                 estLinea1.Text = Tx.T("antes", Mb(a0), Tx.T("menos", Math.Round((1 - a1 / a0) * 100)));
                 estLinea2.Text = Tx.T("doble");
-                estLinea2.ForeColor = C.Ink2;
+                estLinea2.ForeColor = Paleta.Ink2;
             }
             else if (n == 0)
             {
@@ -1064,15 +942,13 @@ namespace VideoLite
                     int nivel;
                     string q = Motor.Calidad(peor, out nivel);
                     estLinea2.Text = Tx.T("calEsperada", q) + (peor.Bpp < 0.025 && peor.VsSource < 0.6 && aj.Res != 360 ? Tx.T("bajaRes") : "");
-                    estLinea2.ForeColor = nivel == 2 ? C.AccentText : nivel == 1 ? C.Amber : C.Danger;
+                    estLinea2.ForeColor = nivel == 2 ? Paleta.Ink : nivel == 1 ? Paleta.Amber : Paleta.Danger;
                 }
                 else { estLinea2.Text = ""; }
             }
             if (!trabajando && estadoFinal != null) estado.Text = estadoFinal;
             int pendientes = items.Count(i => i.Estado == "listo" && i.Plan != null && !i.Plan.TooSmall);
-            btnIr.Enabled = !trabajando && pendientes > 0 && Motor.Ffmpeg != null;
-            btnIr.BackColor = btnIr.Enabled ? C.Accent : C.Surface2;
-            btnIr.ForeColor = btnIr.Enabled ? Color.White : C.Ink3;
+            btnIr.Enabled = !trabajando && pendientes > 0 && Motor.Ffmpeg != null;   // desactivado, BotonAero lo pinta casi gris
             btnIr.Text = trabajando ? Tx.T("comprimiendo") : pendientes > 1 ? Tx.T("comprimirN", pendientes) : Tx.T("comprimir");
             chkEditor.Enabled = !trabajando;
             AjustarColumnas();
@@ -1138,7 +1014,7 @@ namespace VideoLite
                             cap.Estado = "hecho"; cap.Salida = salida; cap.Nota = nota; cap.NoCupo = noCupo; cap.Segundos = seg;
                             cap.Lv.SubItems[2].Text = Mb(tamSal);
                             EscribirEstado(cap);
-                            cap.Lv.ForeColor = noCupo ? C.Danger : C.AccentText;
+                            cap.Lv.ForeColor = noCupo ? Paleta.Danger : Paleta.Ink;
                             cap.Lv.ToolTipText = salida + (nota != null ? "\n" + nota : "");
                         }));
                     }
@@ -1154,7 +1030,7 @@ namespace VideoLite
                         {
                             cap.Estado = Motor.Cancelado ? "listo" : "error";
                             cap.Error = msg; cap.Lv.SubItems[4].Text = msg;
-                            if (!Motor.Cancelado) cap.Lv.ForeColor = C.Danger;
+                            if (!Motor.Cancelado) cap.Lv.ForeColor = Paleta.Danger;
                         }));
                         if (Motor.Cancelado) break;
                     }

@@ -3,7 +3,7 @@
 #   dist\VideoLite-<ver>-ffmpeg-fuentes.zip  el código fuente completo de ffmpeg.exe (GPL) y su receta
 # Uso: powershell -ExecutionPolicy Bypass -File escritorio\empaquetar.ps1
 $ErrorActionPreference = "Stop"
-$ver = "0.5"
+$ver = "0.6"
 $aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dist = Join-Path $aqui "dist"
 $fb = Join-Path $aqui "ffmpeg-build"
