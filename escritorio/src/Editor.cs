@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs: editor de un video en la app (P-026), igual que el de la web (sitio/editor.js):
+// Video Lite - Zedran Labs: editor de un video en la app (P-026), igual que el de la web (sitio/editor.js):
 // una casilla "Activar editor" lo despliega en lugar de la lista, con el visor (Reproductor de Windows Media),
 // la línea de tiempo con el video y el audio en pistas separadas y cinco operaciones: recortar el inicio y el fin,
 // quitar tramos, silenciar el audio por tramos, el volumen y mover el audio.
@@ -383,7 +383,7 @@ namespace VideoLite
             cambios.Controls.Add(edLista);
             edNota = Ayuda("edNotaVista");
             cambios.Controls.Add(edNota);
-            // Debajo de la línea de tiempo, tres columnas cuando hay ancho (recortar y tramo · audio · cambios), o una debajo de otra.
+            // Debajo de la línea de tiempo, tres columnas cuando hay ancho (recortar y tramo - audio - cambios), o una debajo de otra.
             var ayudaMover = Ayuda("edMoverAyuda"); ayudaMover.Margin = new Padding(0, 0, 0, 6);
             var colOps = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 14, 0) };
             var colAudio = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 14, 0) };
@@ -453,7 +453,7 @@ namespace VideoLite
             editorOn = on;
             btnAgregarCarpeta.Visible = !on;
             CambiarClave(lblSecVideos, on ? "edTitulo" : "secVideos");
-            lblSecVideos.Visible = !on;                    // como en la web, el editor reemplaza "1 · Tus videos"; sin su barra gana alto
+            lblSecVideos.Visible = !on;                    // como en la web, el editor reemplaza "1 - Tus videos"; sin su barra gana alto
             btnAgregarVideos.Parent.Visible = !on;         // cambiar o quitar el video: en la fila de reproducir
             marcoLista.Margin = new Padding(16, on ? 12 : 0, 16, on ? 10 : 16);   // sin la fila de botones, el aire lo da la lista
             AcomodoAjustes();          // los ajustes pasan debajo del editor (o vuelven a la derecha)

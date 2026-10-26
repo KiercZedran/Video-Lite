@@ -3,7 +3,7 @@
 #   dist\VideoLite-<ver>-ffmpeg-fuentes.zip  el código fuente completo de ffmpeg.exe (GPL) y su receta
 # Uso: powershell -ExecutionPolicy Bypass -File escritorio\empaquetar.ps1
 $ErrorActionPreference = "Stop"
-$ver = "0.6"
+$ver = "0.7"
 $aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dist = Join-Path $aqui "dist"
 $fb = Join-Path $aqui "ffmpeg-build"
@@ -62,14 +62,14 @@ code at https://github.com/KiercZedran/Video-Lite) that runs ffmpeg.exe as an in
 "@ | Set-Content -Encoding utf8 "$lic\ffmpeg-CODIGO-FUENTE.txt"
 
 @"
-VIDEO LITE · BY ZEDRAN LABS · v$ver para Windows 10/11 (64 bits)
+VIDEO LITE - BY ZEDRAN LABS - v$ver para Windows 10/11 (64 bits)
 
 1. Descomprime esta carpeta donde quieras. No se instala.
 2. Abre VideoLite.exe. Arrastra tus videos, elige el tamaño final y da clic en Procesar.
    Los procesados se guardan en una carpeta "Video Lite" junto a cada original.
 3. Para recortar, quitar tramos o arreglar el audio de un video, marca "Activar editor".
 4. Opcional: "Agregar a Enviar a", en el pie de la ventana, te deja procesar con clic
-   derecho en un video → Enviar a → Video Lite.
+   derecho en un video > Enviar a > Video Lite.
 
 Si Windows muestra "Windows protegió su PC": es porque la app todavía no tiene firma de
 desarrollador. Da clic en "Más información" y luego en "Ejecutar de todas formas".
@@ -82,19 +82,19 @@ esta carpeta y, si quieres, %LOCALAPPDATA%\ZedranLabs\VideoLite (solo guarda el 
 
 Gratis y de código abierto (GPL-3.0, LICENSE.txt): https://github.com/KiercZedran/Video-Lite
 Página: https://videolite.zedran.xyz
-Reportes: https://discord.com/invite/2ZRbaYDAnR · Kierc117@hotmail.com
+Reportes: https://discord.com/invite/2ZRbaYDAnR - Kierc117@hotmail.com
 "@ | Set-Content -Encoding utf8 "$app\LEEME.txt"
 
 @"
-VIDEO LITE · BY ZEDRAN LABS · v$ver for Windows 10/11 (64-bit)
+VIDEO LITE - BY ZEDRAN LABS - v$ver for Windows 10/11 (64-bit)
 
 1. Unzip this folder wherever you like. Nothing gets installed.
 2. Open VideoLite.exe (the round "EN" button at the top switches the language). Drag your videos in,
    choose the final size and click Process. The processed files are saved in a
    "Video Lite" folder next to each original.
 3. To trim, cut out parts or fix the audio of a video, check "Turn on the editor".
-4. Optional: "Add to Send to", in the window footer, lets you right-click a video →
-   Send to → Video Lite.
+4. Optional: "Add to Send to", in the window footer, lets you right-click a video >
+   Send to > Video Lite.
 
 If Windows shows "Windows protected your PC": the app doesn't have a developer signature yet.
 Click "More info" and then "Run anyway".
@@ -107,7 +107,7 @@ folder and, if you like, %LOCALAPPDATA%\ZedranLabs\VideoLite (it only stores the
 
 Free and open source (GPL-3.0, LICENSE.txt): https://github.com/KiercZedran/Video-Lite
 Website: https://videolite.zedran.xyz/en/
-Bug reports: https://discord.com/invite/2ZRbaYDAnR · Kierc117@hotmail.com
+Bug reports: https://discord.com/invite/2ZRbaYDAnR - Kierc117@hotmail.com
 "@ | Set-Content -Encoding utf8 "$app\README.txt"
 
 # Paquete de fuentes

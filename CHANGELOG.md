@@ -8,6 +8,37 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ---
 
+## 0.7 - en preparación (sin publicar)
+
+Lo que cambió desde la 0.6. Sale de una prueba con grabaciones de cámaras de seguridad: horas de video que se querían mandar por WhatsApp o Discord.
+
+### Novedades
+
+**Página y app**
+- **Velocidades x4, x8 y x16,** sin audio, para repasar grabaciones largas. A x8 y con 15 cuadros por segundo, una grabación de 4 horas cabe en 20 MB.
+- **Cuadros por segundo** en "Más opciones": los del original o 15, que pesa menos. En grabaciones de cámaras o de pantalla casi no se nota.
+- **La resolución baja sola** cuando el tamaño no alcanza para que se vea bien; antes solo lo sugería. El estimado dice a cuál bajó, por ejemplo: "Sale en 720p para que se vea más nítido".
+
+### Cambios
+
+**Página y app**
+- **El audio de teléfono** (8 o 16 kHz, como el de las cámaras de seguridad) se queda en 16 kbps, en lugar de 40 a 128. Más no se oye mejor, y así la imagen se lleva el espacio.
+- **Los textos ya no usan símbolos que no están en el teclado:** van "...", "~13 MB", "1920x1080", "x2" y "de 0:06 a 0:08".
+- **El pie** también está en las páginas de privacidad y de error.
+
+**App de Windows**
+- **Los separadores** son guiones, como en la página desde la 0.6.
+
+### Correcciones
+
+**Página y app**
+- **Videos que anotan el doble de cuadros por segundo:** algunas grabadoras de cámaras dicen 60 y graban 30. Se repetía cada cuadro, así que tardaba casi el doble y la imagen salía peor. Ahora se usan los cuadros que de verdad tiene el video.
+
+**App de Windows**
+- **La sombra del encabezado** se veía como una franja gris corrida. Ahora es una sombra suave, como en la página.
+
+---
+
 ## 0.6 - 2026-10-23 - publicada
 
 Lo que cambió desde la 0.5. La app y la página estrenan juntas el estilo Zedran Aero, el de las herramientas gratuitas de Zedran Labs.
@@ -38,6 +69,8 @@ Lo que cambió desde la 0.5. La app y la página estrenan juntas el estilo Zedra
 - **La letra** es Segoe UI (la de Windows), con Figtree de respaldo fuera de Windows. Ya no se precargan fuentes.
 - **Los enlaces** van del color del texto, con el subrayado verde.
 - **El estilo** vive en dos hojas nuevas: `zedran-aero.css`, el estilo de todas las herramientas gratuitas de Zedran Labs, y `video-lite-aero.css`, lo propio de Video Lite.
+- **El pie** enlaza "zedran.xyz", sin repetir "Video Lite - by Zedran Labs", que ya está en el encabezado.
+- **Los separadores** de títulos, menús y avisos son guiones.
 
 **App de Windows**
 - **Calidad y velocidad** se eligen con botones en lugar de círculos. Las calidades que no sirven para ese video salen tachadas.
@@ -149,7 +182,7 @@ Primera actualización desde la 0.1. Junta las compilaciones internas 0.2, 0.3, 
 **App de Windows**
 - **Inglés:** un botón cambia toda la ventana. La primera vez, la app abre en el idioma de Windows.
 - **Tema oscuro:** un botón "Tema oscuro / Tema claro", que también oscurece la barra de título. La app recuerda la elección.
-- **"Agregar a "Enviar a"":** clic derecho en un video → Enviar a → Video Lite. También acepta archivos y carpetas como argumentos.
+- **"Agregar a "Enviar a"":** clic derecho en un video > Enviar a > Video Lite. También acepta archivos y carpetas como argumentos.
 - **Al terminar:** un sonido, un parpadeo en la barra de tareas y una notificación de Windows.
 - **Pie:** enlaces a Privacidad y al correo de contacto.
 - **El zip** trae `README.txt` y `EULA-en.txt`.
@@ -171,7 +204,7 @@ Primera actualización desde la 0.1. Junta las compilaciones internas 0.2, 0.3, 
 
 ### Cambios
 
-- **"Procesar" en vez de "Comprimir"** (web y app), porque el botón aplica todo lo elegido, ediciones incluidas. También cambian "Procesando…", "por procesar" y la notificación: "Videos procesados: n de total".
+- **"Procesar" en vez de "Comprimir"** (web y app), porque el botón aplica todo lo elegido, ediciones incluidas. También cambian "Procesando...", "por procesar" y la notificación: "Videos procesados: n de total".
 - **Cambiar un ajuste después de procesar** vuelve a dejar el video listo para procesarse. El archivo anterior se puede descargar hasta que se reemplaza.
 - **Los límites de los destinos:**
   - Discord gratis pasa de 10 a 20 MB, porque Discord subió su límite.
@@ -183,7 +216,7 @@ Primera actualización desde la 0.1. Junta las compilaciones internas 0.2, 0.3, 
 - **El nombre del archivo:** un video que ya terminaba en "-lite" ya no sale como "-lite-lite".
 - **Seguridad:** la web envía HSTS. Además, el motor completo ya no se guarda una semana en la caché, así que una actualización no puede mezclar versiones.
 - **La app de Windows:**
-  - Ahora calcula las medidas igual que la web. Con algunas medidas poco comunes, el ancho de salida podía quedar 2 px distinto; por ejemplo, 1914×720 a 360p.
+  - Ahora calcula las medidas igual que la web. Con algunas medidas poco comunes, el ancho de salida podía quedar 2 px distinto; por ejemplo, 1914x720 a 360p.
   - Su `ffmpeg.exe` se recompiló con LAME, para el MP3, y con los formatos MOV y MKV. El zip de fuentes de ffmpeg incluye LAME.
 - **El EULA** pasa a su versión 0.2, con el correo de contacto y la cláusula de idioma.
 
@@ -195,7 +228,7 @@ Primera actualización desde la 0.1. Junta las compilaciones internas 0.2, 0.3, 
 
 ### Eliminado
 
-- **Los botones de tamaño rápido** de la web y la app ("Discord 10 MB", "correo 25 MB"…). Los reemplaza el menú "Para enviar por".
+- **Los botones de tamaño rápido** de la web y la app ("Discord 10 MB", "correo 25 MB"...). Los reemplaza el menú "Para enviar por".
 - **El aviso amarillo de arriba** de la página, con su botón de descarga. Lo reemplazan la burbuja y el bloque plegable.
 - **La carga de Google Fonts.**
 - **La descarga de la 0.1** ya no aparece en la página, que solo ofrece la 0.0.2.5.
@@ -208,7 +241,7 @@ Primera versión.
 
 | Descarga | Tamaño | SHA-256 |
 |---|---|---|
-| `VideoLite-0.1-win64.zip` | 6 932 273 B | `70d558a4…2962703f` |
+| `VideoLite-0.1-win64.zip` | 6 932 273 B | `70d558a4...2962703f` |
 | `VideoLite-0.1-ffmpeg-fuentes.zip` | 15 632 559 B | (no se registró) |
 
 ### Novedades
@@ -216,9 +249,9 @@ Primera versión.
 **Web**
 - **Privada:** comprime videos dentro del navegador y nunca sube nada. El motor (ffmpeg.wasm, de un hilo) se descarga de jsDelivr y solo se usa si su SHA-256 coincide.
 - **Ajustes:**
-  - el tamaño final en MB, con botones de acceso rápido ("Discord 10 MB", "correo 25 MB"…);
+  - el tamaño final en MB, con botones de acceso rápido ("Discord 10 MB", "correo 25 MB"...);
   - la calidad, como resolución máxima;
-  - la velocidad, de ×0.5 a ×2, sin cambiar el tono de la voz.
+  - la velocidad, de x0.5 a x2, sin cambiar el tono de la voz.
 - **Estimado antes de empezar:** el tamaño y la calidad que va a tener cada video.
 - **Diseño:** tema claro por defecto, con un botón para el oscuro; ancho de 980 px y el pie común de las webapps de Zedran Labs.
 - **Descarga de la app:** con su SHA-256, el comando para verificarlo, los pasos para el aviso "Windows protegió su PC" y el código fuente de FFmpeg.

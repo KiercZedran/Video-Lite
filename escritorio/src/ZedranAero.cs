@@ -1,4 +1,4 @@
-// Zedran Aero para las apps de escritorio gratuitas de Zedran Labs (WinForms, .NET Framework 4.8, C# 5). Versión 1.0 (2026-10-22).
+// Zedran Aero para las apps de escritorio gratuitas de Zedran Labs (WinForms, .NET Framework 4.8, C# 5). Versión 1.1 (2026-10-26: la sombra de los paneles, difuminada de verdad).
 // El mismo estilo de zedran-aero.css (versión 1.1): la foto de fondo difuminada, paneles de vidrio con barra de título
 // azul, los cinco tipos de botón, opciones en píldora, casilla, deslizador verde con bolita blanca, barra de avance verde
 // y enlaces con subrayado verde. Full Aero en tema claro y Dark Aero en oscuro.
@@ -22,9 +22,9 @@ using System.Windows.Forms;
 
 namespace ZedranAero
 {
-    // [PRINCIPAL] la acción principal (procesar, reproducir) · [ACCIÓN] lo que se hace con el contenido (editar, cancelar)
-    // y la opción elegida · [SECUNDARIO] especiales (descargar, abrir el resultado, el café) · [TERCIARIO] poco importantes
-    // (quitar, copiar, deshacer, +/-) · [HERRAMIENTA] cambian la ventana, no el contenido (idioma, tema): orbe azul.
+    // [PRINCIPAL] la acción principal (procesar, reproducir) - [ACCIÓN] lo que se hace con el contenido (editar, cancelar)
+    // y la opción elegida - [SECUNDARIO] especiales (descargar, abrir el resultado, el café) - [TERCIARIO] poco importantes
+    // (quitar, copiar, deshacer, +/-) - [HERRAMIENTA] cambian la ventana, no el contenido (idioma, tema): orbe azul.
     public enum TipoBoton { Principal, Accion, Secundario, Terciario, Herramienta }
     // Lo que lleva un orbe [HERRAMIENTA]: una sigla (EN/ES, la de la propiedad Sigla) o la luna/el sol del tema
     public enum IconoBoton { Ninguno, Sigla, Tema }
@@ -108,7 +108,6 @@ namespace ZedranAero
         static Color Anillo { get { return O ? A(56, 120, 200, 255) : A(128, 255, 255, 255); } }       // el anillo de 1 px de --ae-shadow
         static Color Vidrio1 { get { return O ? A(158, 24, 66, 104) : A(140, 255, 255, 255); } }       // --ae-glass
         static Color Vidrio2 { get { return O ? A(107, 6, 28, 52) : A(77, 255, 255, 255); } }
-        static Color SombraPanel { get { return O ? A(40, 0, 0, 0) : A(20, 0, 40, 90); } }             // una capa de --ae-shadow
         static Color FondoTexto { get { return O ? H("#10304a") : H("#cfe6f4"); } }   // detrás de lo desactivado, aproximado
 
         /* ---------- Fondo: la foto, difuminada, fija a la ventana ---------- */
@@ -124,7 +123,7 @@ namespace ZedranAero
         static TextureBrush pincelVidrio;   // el vidrio: la foto más difuminada y saturada, como backdrop-filter
         static Size tam;
         static bool tamOscuro;
-        static readonly Dictionary<Control, bool> vidrios = new Dictionary<Control, bool>();   // panel → lleva franjas
+        static readonly Dictionary<Control, bool> vidrios = new Dictionary<Control, bool>();   // panel -> lleva franjas
         static readonly List<Control> conSombra = new List<Control>();
 
         static Bitmap Fuente(bool oscuro)
@@ -323,26 +322,60 @@ namespace ZedranAero
             foreach (var c in conSombra) if (c.Visible && c.FindForm() == f) Sombra(g, c, f, clip);
         }
 
-        // 0 30px 60px -22px: una sombra suave que asoma abajo del panel (capas que se suman, como un desenfoque)
+        // --ae-shadow (0 30px 60px -22px): la forma del panel encogida 22 px por lado, bajada 30 px y difuminada 60 px
+        // (sigma 30), como box-shadow; solo se pinta afuera del panel. En un panel bajo (el encabezado) casi no se ve, como
+        // en la web. Se arma una vez por tamaño y tema, a un tercio del tamaño (es borrosa).
+        class SombraHecha { public Size Tam; public bool Oscuro; public Bitmap Bmp; public RectangleF Caja; }
+        static readonly Dictionary<Control, SombraHecha> sombras = new Dictionary<Control, SombraHecha>();
+
+        static SombraHecha HacerSombra(Control c)
+        {
+            SombraHecha s;
+            if (sombras.TryGetValue(c, out s) && s.Tam == c.Size && s.Oscuro == O) return s;
+            if (s != null && s.Bmp != null) s.Bmp.Dispose();
+            s = new SombraHecha { Tam = c.Size, Oscuro = O };
+            sombras[c] = s;
+            float menos = E(22), sigma = E(30), margen = sigma * 2.5f;
+            float fw = c.Width - 3f - 2 * menos, fh = c.Height - 3f - 2 * menos;
+            if (fw < 1 || fh < 1) return s;
+            s.Caja = new RectangleF(menos - margen, menos + E(30) - margen, fw + 2 * margen, fh + 2 * margen);   // desde el cuerpo del panel
+            const int div = 3;
+            int w = Math.Max(1, (int)Math.Ceiling(s.Caja.Width / div)), h = Math.Max(1, (int)Math.Ceiling(s.Caja.Height / div));
+            int x0 = (int)Math.Round(margen / div), y0 = x0;
+            int x1 = Math.Min(w, x0 + Math.Max(1, (int)Math.Round(fw / div))), y1 = Math.Min(h, y0 + Math.Max(1, (int)Math.Round(fh / div)));
+            var px = new int[w * h];   // la forma en el canal azul; Desenfocar trabaja por canal
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    px[y * w + x] = unchecked((int)0xFF000000) | (x >= x0 && x < x1 && y >= y0 && y < y1 ? 255 : 0);
+            int[] bl = Desenfocar(px, w, h, sigma / div);
+            Color col = O ? Color.FromArgb(217, 0, 0, 0) : Color.FromArgb(153, 0, 40, 90);   // rgb(0 0 0 / 85%) y rgba(0,40,90,.6)
+            var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+            BitmapData d = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            var fila = new int[w];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++) { int a = (bl[y * w + x] & 255) * col.A / 255; fila[x] = (a << 24) | (col.R << 16) | (col.G << 8) | col.B; }
+                Marshal.Copy(fila, 0, IntPtr.Add(d.Scan0, y * d.Stride), w);
+            }
+            bmp.UnlockBits(d);
+            s.Bmp = bmp;
+            return s;
+        }
+
         static void Sombra(Graphics g, Control c, Form f, Rectangle clip)
         {
+            SombraHecha s = HacerSombra(c);
+            if (s.Bmp == null) return;
             Point o = Desplazamiento(c, f);
             var cuerpo = new RectangleF(o.X + 1.5f, o.Y + 1.5f, c.Width - 3f, c.Height - 3f);
-            float dy = E(30), menos = E(22), borroso = E(30), radio = E(18);
-            var s = new RectangleF(cuerpo.X + menos, cuerpo.Y + menos + dy, cuerpo.Width - 2 * menos, cuerpo.Height - 2 * menos);
-            if (s.Width <= 0 || s.Height <= 0 || !RectangleF.Inflate(s, borroso, borroso).IntersectsWith(clip)) return;
+            var dest = new RectangleF(cuerpo.X + s.Caja.X, cuerpo.Y + s.Caja.Y, s.Caja.Width, s.Caja.Height);
+            if (!dest.IntersectsWith(clip)) return;
             var st = g.Save();
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            using (var p = Redondo(cuerpo, radio)) g.SetClip(p, CombineMode.Exclude);
-            const int capas = 10;
-            using (var b = new SolidBrush(SombraPanel))
-                for (int i = 0; i <= capas; i++)
-                {
-                    float d = -borroso + i * 2 * borroso / capas;
-                    var rr = RectangleF.Inflate(s, d, d);
-                    if (rr.Width <= 1 || rr.Height <= 1) continue;
-                    using (var p = Redondo(rr, Math.Max(0, radio - menos + d))) g.FillPath(b, p);
-                }
+            using (var p = Redondo(cuerpo, E(18))) g.SetClip(p, CombineMode.Exclude);
+            g.InterpolationMode = InterpolationMode.Bilinear;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.DrawImage(s.Bmp, dest, new RectangleF(0, 0, s.Bmp.Width, s.Bmp.Height), GraphicsUnit.Pixel);
             g.Restore(st);
         }
 
@@ -357,7 +390,12 @@ namespace ZedranAero
             vidrios[p] = franjas;
             if (sombra) conSombra.Add(p);
             p.Paint += (s, e) => PintarVidrio(e.Graphics, p);
-            p.Disposed += (s, e) => { vidrios.Remove(p); conSombra.Remove(p); };
+            p.Disposed += (s, e) =>
+            {
+                vidrios.Remove(p); conSombra.Remove(p);
+                SombraHecha sh;
+                if (sombras.TryGetValue(p, out sh)) { if (sh.Bmp != null) sh.Bmp.Dispose(); sombras.Remove(p); }
+            };
         }
 
         public static void PintarVidrio(Graphics g, Control p)

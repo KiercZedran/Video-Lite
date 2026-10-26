@@ -19,9 +19,9 @@ Necesitas Windows de 64 bits. Lo probé en Windows 10 Pro.
 - Trae destinos con su límite: Discord, Discord Nitro, WhatsApp (720p) y correo.
 - Arregla el audio mudo de los videos que se oyen en audífonos pero no en bocinas ni laptops. Pasa cuando los canales tienen la fase invertida.
 - "Mejorar voz" quita el ruido de fondo y empareja el volumen de la voz.
-- Puedes bajar la resolución, cambiar la velocidad de ×0.5 a ×2 sin que la voz cambie de tono, girar o voltear el video, quitarle el audio o sacar solo el audio en MP3 o M4A.
+- Puedes bajar la resolución, cambiar la velocidad de x0.5 a x2 sin que la voz cambie de tono, girar o voltear el video, quitarle el audio o sacar solo el audio en MP3 o M4A.
 - Guarda en MP4, MOV o MKV, siempre con video H.264 y audio AAC, que abre casi cualquier equipo.
-- Procesa muchos videos a la vez: arrastra archivos o carpetas, o usa clic derecho → Enviar a → Video Lite.
+- Procesa muchos videos a la vez: arrastra archivos o carpetas, o usa clic derecho > Enviar a > Video Lite.
 - Está en español e inglés, con tema claro u oscuro.
 
 ## Privacidad
@@ -93,14 +93,14 @@ It needs 64-bit Windows. I've tested it on Windows 10 Pro.
 - Destinations with their limits built in: Discord, Discord Nitro, WhatsApp (720p) and email.
 - Fixes silent audio, the kind you hear on headphones but not on speakers or laptops because the channels are phase-inverted.
 - "Enhance voice" cuts background noise and evens out voices.
-- Lower the resolution, change the speed from ×0.5 to ×2 (voices keep their pitch), rotate or flip, drop the audio, or keep only the audio as MP3 or M4A.
+- Lower the resolution, change the speed from x0.5 to x2 (voices keep their pitch), rotate or flip, drop the audio, or keep only the audio as MP3 or M4A.
 - Saves MP4, MOV or MKV, always H.264 video with AAC audio, which plays on almost anything.
-- Many videos at once: drag in files or whole folders, or right-click → Send to → Video Lite.
+- Many videos at once: drag in files or whole folders, or right-click > Send to > Video Lite.
 - Spanish and English, light and dark themes.
 
 ### Privacy
 
-Nothing goes online. The app never connects to the internet and your videos stay on your computer. The only things it writes are the processed files (in a "Video Lite" folder next to each original), `%LOCALAPPDATA%\ZedranLabs\VideoLitejustes.txt` with your theme and language, the "Send to" shortcut if you ask for it, and temporary files in `%TEMP%\VideoLite\`, which it deletes after each video.
+Nothing goes online. The app never connects to the internet and your videos stay on your computer. The only things it writes are the processed files (in a "Video Lite" folder next to each original), `%LOCALAPPDATA%\ZedranLabs\VideoLite\ajustes.txt` with your theme and language, the "Send to" shortcut if you ask for it, and temporary files in `%TEMP%\VideoLite\`, which it deletes after each video.
 
 Privacy policy: [videolite.zedran.xyz/en/privacy](https://videolite.zedran.xyz/en/privacy/).
 

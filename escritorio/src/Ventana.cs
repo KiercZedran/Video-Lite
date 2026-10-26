@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs: ventana principal (WinForms, .NET Framework 4.8, C# 5).
+// Video Lite - Zedran Labs: ventana principal (WinForms, .NET Framework 4.8, C# 5).
 // Estilo Zedran Aero, el mismo de la web: ZedranAero.cs, copiado tal cual del paquete del estándar de webapps
 // gratuitas (zedran-aero\winforms\). Full Aero en tema claro y Dark Aero en oscuro; los colores están en Paleta.
 // Textos en Textos.cs (español e inglés, se cambian en vivo). El editor de un video está en Editor.cs.
@@ -17,18 +17,18 @@ using System.Windows.Forms;
 using ZedranAero;
 
 [assembly: AssemblyTitle("Video Lite")]
-[assembly: AssemblyProduct("Video Lite · by Zedran Labs")]
+[assembly: AssemblyProduct("Video Lite - by Zedran Labs")]
 [assembly: AssemblyCompany("Zedran Labs")]
 [assembly: AssemblyCopyright("Zedran Labs")]
-[assembly: AssemblyVersion("0.6")]
-[assembly: AssemblyFileVersion("0.6")]
+[assembly: AssemblyVersion("0.7")]
+[assembly: AssemblyFileVersion("0.7")]
 
 namespace VideoLite
 {
     // La versión de la app (la del pie de la página y la del Release). Los colores están en Paleta (ZedranAero.cs).
     static class C
     {
-        public const string Version = "0.6";
+        public const string Version = "0.7";
     }
 
     // Preferencias en %LOCALAPPDATA%\ZedranLabs\VideoLite\ajustes.txt (líneas clave=valor). Solo tema e idioma.
@@ -128,7 +128,7 @@ namespace VideoLite
         readonly List<FlowLayoutPanel> seccionesAjustes = new List<FlowLayoutPanel>();
         readonly List<Tuple<Label, Control[]>> ayudasAjustes = new List<Tuple<Label, Control[]>>();
         readonly ToolTip globos = new ToolTip { AutoPopDelay = 15000, InitialDelay = 400 };
-        readonly List<OpcionAero> radiosRes = new List<OpcionAero>(), radiosVel = new List<OpcionAero>();
+        readonly List<OpcionAero> radiosRes = new List<OpcionAero>(), radiosVel = new List<OpcionAero>(), radiosFps = new List<OpcionAero>();
         Font fBase, fBold, fTitulo, fGrande, fSec, fChico;
 
         // Controles cuyo texto sale del diccionario: se vuelven a escribir al cambiar de idioma.
@@ -161,7 +161,7 @@ namespace VideoLite
             fTitulo = new Font("Segoe UI", 18f, FontStyle.Bold);
             fGrande = new Font("Segoe UI Semibold", 26f);
 
-            Text = "Video Lite · by Zedran Labs";
+            Text = "Video Lite - by Zedran Labs";
             Font = fBase;
             BackColor = Paleta.Fondo;   // debajo de la foto que pinta VentanaAero (con el tema de las preferencias)
             ForeColor = Paleta.Ink;
@@ -373,9 +373,9 @@ namespace VideoLite
             // Velocidad (en la misma sección que la calidad)
             sec.Controls.Add(Leyenda("legVel"));
             var filaVel = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
-            foreach (var v in new[] { 0.5, 1, 1.5, 2 })
+            foreach (var v in new[] { 0.5, 1, 1.5, 2, 4, 8, 16 })   // x4 o más: sin audio, para repasar grabaciones largas
             {
-                var rb = new OpcionAero { Text = "×" + v.ToString(CI), Tag = v, AutoSize = true, Checked = v == 1, Margin = new Padding(0, 0, 4, 2) };
+                var rb = new OpcionAero { Text = "x" + v.ToString(CI), Tag = v, AutoSize = true, Checked = v == 1, Margin = new Padding(0, 0, 4, 2) };
                 rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.Speed = (double)((RadioButton)s).Tag; Cambio(); } };
                 radiosVel.Add(rb); filaVel.Controls.Add(rb);
             }
@@ -409,6 +409,18 @@ namespace VideoLite
             cbRotar = Combo(RotKeys, 0);
             cbRotar.SelectedIndexChanged += (s, e) => { aj.Rotacion = RotVals[cbRotar.SelectedIndex]; Refrescar(); };
             panelMas.Controls.Add(Aero.ConBorde(cbRotar));
+            // Cuadros por segundo: los del original o 15 (pesa menos; en grabaciones de cámaras casi no se nota)
+            panelMas.Controls.Add(Leyenda("legFps"));
+            var filaFps = new FlowLayoutPanel { AutoSize = true, WrapContents = true, Margin = new Padding(0) };
+            foreach (int cps in new[] { 0, 15 })
+            {
+                var rb = new OpcionAero { Text = cps == 0 ? "" : cps.ToString(CI), Tag = cps, AutoSize = true, Checked = cps == 0, Margin = new Padding(0, 0, 4, 2) };
+                if (cps == 0) L(rb, "resOriginal");
+                rb.CheckedChanged += (s, e) => { if (((RadioButton)s).Checked) { aj.FpsMax = (int)((RadioButton)s).Tag; Cambio(); } };
+                radiosFps.Add(rb); filaFps.Controls.Add(rb);
+            }
+            panelMas.Controls.Add(filaFps);
+            panelMas.Controls.Add(AyudaAjuste("helpFps", radiosFps.Cast<Control>().ToArray()));
             chkSinAudio = L(new CasillaAero { AutoSize = true, Margin = new Padding(0, 0, 0, 4) }, "sinAudio");
             chkSinAudio.CheckedChanged += (s, e) => { aj.SinAudio = chkSinAudio.Checked; Cambio(); };
             panelMas.Controls.Add(chkSinAudio);
@@ -569,7 +581,7 @@ namespace VideoLite
             int etiqueta = editorOn ? col - 4 : Math.Max(200, panelAjustes.ClientSize.Width - 36);
             foreach (Control c in Descendientes(flujoAjustes)) if (c is Label || c is CasillaAero) c.MaximumSize = new Size(etiqueta, 0);
             // Las filas de calidades y velocidades se parten a este ancho; sin tope, se quedan partidas al ancho de un acomodo anterior.
-            foreach (var fila in new[] { radiosRes[0].Parent, radiosVel[0].Parent }) fila.MaximumSize = new Size(editorOn ? col : etiqueta, 0);
+            foreach (var fila in new[] { radiosRes[0].Parent, radiosVel[0].Parent, radiosFps[0].Parent }) fila.MaximumSize = new Size(editorOn ? col : etiqueta, 0);
         }
 
         // Debajo del editor, la franja de ajustes mide lo que su contenido, pero a lo más el 30 % del alto (y se desplaza adentro);
@@ -879,6 +891,7 @@ namespace VideoLite
                 if (muyGrande && rb.Checked) radiosRes[0].Checked = true;
             }
             foreach (var rb in radiosVel) rb.Enabled = !trabajando;
+            foreach (var rb in radiosFps) rb.Enabled = !trabajando && !solo;
             foreach (Control c in new Control[] { tam, barraTam, cbDestino, cbRotar, chkSinAudio }) c.Enabled = !trabajando && !solo;
             ayudaSoloAudio.Visible = solo;
 
@@ -888,7 +901,7 @@ namespace VideoLite
             {
                 var sub = it.Lv.SubItems;
                 if (it.Info != null)
-                    sub[1].Text = Mb(it.Size) + " · " + Dur(it.Info.Dur) + " · " + it.Info.W + "×" + it.Info.H + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
+                    sub[1].Text = Mb(it.Size) + " - " + Dur(it.Info.Dur) + " - " + it.Info.W + "x" + it.Info.H + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
                 if (it.Estado == "error") { sub[4].Text = it.Error; it.Lv.ForeColor = Paleta.Danger; continue; }
                 if (it.Estado == "hecho" || it.Estado == "trabajando" || it.Info == null) continue;
                 var ed = EdicionDe(it);
@@ -898,7 +911,7 @@ namespace VideoLite
                 if (it.Plan.SoloAudio)
                 {
                     if (it.Plan.SinPistaAudio) { sub[2].Text = "-"; sub[3].Text = Tx.T("sinPista"); sub[4].Text = ""; alguno = true; continue; }
-                    sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
+                    sub[2].Text = "~" + Mb(it.Plan.EstMB * 1e6);
                     sub[3].Text = Tx.T("soloAudio", aj.Formato.ToUpperInvariant());
                     sub[4].Text = Tx.T("porComprimir", aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
                     it.Lv.ForeColor = Paleta.Ink;
@@ -907,9 +920,11 @@ namespace VideoLite
                 }
                 if (it.Plan.TooSmall) { sub[2].Text = Tx.T("noCabe"); sub[3].Text = Tx.T("subeTam"); sub[4].Text = ""; alguno = true; continue; }
                 int nivel;
-                sub[2].Text = "≈ " + Mb(it.Plan.EstMB * 1e6);
+                sub[2].Text = "~" + Mb(it.Plan.EstMB * 1e6);
                 sub[3].Text = Motor.Calidad(it.Plan, out nivel);
-                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "×" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
+                // A x4 o más el video va sin audio: se dice en la lista.
+                bool sinAudioPorVel = it.Info.HasAudio && !aj.SinAudio && !it.Plan.HasAudio;
+                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "x" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "") + (sinAudioPorVel ? Tx.T("sinAudioMeta") : "");
                 it.Lv.ForeColor = Paleta.Ink;
                 antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                 if (peor == null || it.Plan.Bpp < peor.Bpp) peor = it.Plan;
@@ -921,7 +936,7 @@ namespace VideoLite
             if (n == 0 && hechos.Count > 0 && hechos.Count == items.Count(i => i.Estado != "error"))
             {
                 double a0 = hechos.Sum(i => (double)i.Size), a1 = hechos.Sum(i => (double)new FileInfo(i.Salida).Length);
-                estGrande.Text = Tx.T(hechos.Count > 1 ? "estTotal" : "estUno", Mb(a1)).Replace("≈ ", "");
+                estGrande.Text = Tx.T(hechos.Count > 1 ? "estTotal" : "estUno", Mb(a1)).Replace("~", "");
                 estLinea1.Text = Tx.T("antes", Mb(a0), Tx.T("menos", Math.Round((1 - a1 / a0) * 100)));
                 estLinea2.Text = Tx.T("doble");
                 estLinea2.ForeColor = Paleta.Ink2;
@@ -941,7 +956,7 @@ namespace VideoLite
                 {
                     int nivel;
                     string q = Motor.Calidad(peor, out nivel);
-                    estLinea2.Text = Tx.T("calEsperada", q) + (peor.Bpp < 0.025 && peor.VsSource < 0.6 && aj.Res != 360 ? Tx.T("bajaRes") : "");
+                    estLinea2.Text = Tx.T("calEsperada", q) + (peor.ResAuto > 0 ? Tx.T("resAuto", peor.ResAuto) : "");   // resolución bajada sola
                     estLinea2.ForeColor = nivel == 2 ? Paleta.Ink : nivel == 1 ? Paleta.Amber : Paleta.Danger;
                 }
                 else { estLinea2.Text = ""; }

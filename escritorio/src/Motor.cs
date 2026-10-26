@@ -1,4 +1,4 @@
-// Video Lite · Zedran Labs: motor de compresión con ffmpeg nativo.
+// Video Lite - Zedran Labs: motor de compresión con ffmpeg nativo.
 // Misma lógica que sitio/app.js (plan, contenedor, fase invertida, dos pasadas); si cambias una, cambia la otra.
 // C# 5: compila con el csc de .NET Framework 4.8 que trae Windows.
 using System;
@@ -19,6 +19,7 @@ namespace VideoLite
         public double Fps;
         public bool HasAudio;
         public int Ach;
+        public int ARate;        // frecuencia del audio en Hz (0 si no se sabe)
         public string VCodec, ACodec;
     }
 
@@ -27,6 +28,7 @@ namespace VideoLite
         public double TargetMB = 25;
         public int Res;          // 0 = original; si no, lado corto máximo
         public double Speed = 1;
+        public int FpsMax;       // tope de cuadros por segundo; 0 = los del original
         public bool Fix = true;
         public bool Voz;                 // "Mejorar voz"
         public string Formato = "mp4";   // mp4 | mov | mkv | mp3 | m4a (estos dos: solo audio)
@@ -40,6 +42,8 @@ namespace VideoLite
         public double OutDur, Fps, Bpp, VsSource, EstMB;
         public int W, H, AK, VK;
         public bool Mono, Capped, TooSmall;
+        public int ARate;                   // audio de teléfono: su frecuencia (se codifica igual); si no, 0
+        public int ResAuto;                 // resolución bajada sola (lado corto), o 0
         public double TargetB, OverheadB;   // tamaño pedido y peso estimado del contenedor, en bytes
         public string Preset;
         public bool SoloAudio, SinPistaAudio, HasAudio;
@@ -100,8 +104,8 @@ namespace VideoLite
     public class Grafo
     {
         public string[] Leer;               // -t: hasta dónde hace falta leer el original
-        public Func<string, string> Video;  // vf (filtros de siempre) → grafo con salida [vout]
-        public Func<string, string> Audio;  // af → grafo con salida [aout]
+        public Func<string, string> Video;  // vf (filtros de siempre) -> grafo con salida [vout]
+        public Func<string, string> Audio;  // af -> grafo con salida [aout]
     }
 
     public static class Motor
@@ -206,9 +210,13 @@ namespace VideoLite
             Match wh = Regex.Match(vs.Value, @", (\d{2,5})x(\d{2,5})[ ,\[]");
             m.W = wh.Success ? int.Parse(wh.Groups[1].Value) : 1280;
             m.H = wh.Success ? int.Parse(wh.Groups[2].Value) : 720;
-            Match fps = Regex.Match(vs.Value, @"([\d.]+) fps");
-            if (!fps.Success) fps = Regex.Match(vs.Value, @"([\d.]+) tbr");
-            m.Fps = fps.Success ? Math.Min(double.Parse(fps.Groups[1].Value, CI), 120) : 30;
+            // "fps" es el promedio que anota el archivo y "tbr", la cadencia que deduce ffmpeg. Hay grabadoras (las de cámaras
+            // de seguridad) que anotan el doble ("60 fps, 30 tbr"): se usa el menor, si no el filtro fps duplica cada cuadro.
+            // Igual que parseProbe en sitio/app.js.
+            Match fps = Regex.Match(vs.Value, @"([\d.]+) fps"), tbr = Regex.Match(vs.Value, @"([\d.]+) tbr");
+            double fa = fps.Success ? double.Parse(fps.Groups[1].Value, CI) : 0, fb = tbr.Success ? double.Parse(tbr.Groups[1].Value, CI) : 0;
+            double cadencia = fa > 0 && fb > 0 ? Math.Min(fa, fb) : Math.Max(fa, fb);
+            m.Fps = cadencia > 0 ? Math.Min(cadencia, 120) : 30;
             m.VCodec = Regex.Match(vs.Value, @"Video: (\w+)").Groups[1].Value;
             Match a = Regex.Match(txt, @"Stream #\d+:\d+.*?: Audio: .*");
             if (a.Success)
@@ -217,6 +225,8 @@ namespace VideoLite
                 Match ch = Regex.Match(s, @"(\d+) channels");
                 m.Ach = s.Contains("mono") ? 1 : s.Contains("stereo") ? 2 : ch.Success ? int.Parse(ch.Groups[1].Value) : 2;
                 m.ACodec = Regex.Match(s, @"Audio: (\w+)").Groups[1].Value;
+                Match hz = Regex.Match(s, @"(\d+) Hz");
+                if (hz.Success) m.ARate = int.Parse(hz.Groups[1].Value, CI);
             }
             m.HasAudio = m.Ach > 0;
             Match rot = Regex.Match(txt, @"rotation of (-?[\d.]+) degrees");
@@ -226,7 +236,7 @@ namespace VideoLite
             return m;
         }
 
-        // Canales en fase invertida (L = −R): al mezclarlos se cancelan y queda silencio.
+        // Canales en fase invertida (L = -R): al mezclarlos se cancelan y queda silencio.
         // Devuelve null si no se pudo medir; quien llama debe tratarlo como "puede estar invertido".
         public static bool? FaseInvertida(string path, double dur)
         {
@@ -253,6 +263,14 @@ namespace VideoLite
 
         public static Plan Planear(InfoVideo m, long size, Ajustes a) { return Planear(m, size, a, m.Dur); }
 
+        // Audio "de teléfono" (8 o 16 kHz, como el de las cámaras de seguridad): 16 kbps en mono, a su misma frecuencia.
+        // Más no se oye mejor, y así la imagen se queda con casi todo el espacio. Igual que audioBajo en sitio/plan.js.
+        public static bool AudioBajo(InfoVideo m) { return m.ARate > 0 && m.ARate <= 16000; }
+        // A x4 o más el audio ya no se entiende: el video va sin audio (sirve para repasar grabaciones largas).
+        public static bool ConAudioA(double speed) { return speed <= 2; }
+        // Resolución automática: si con la elegida la calidad queda baja, se prueba con estas (lado corto), de mayor a menor.
+        static readonly int[] ResAuto = { 1080, 720, 480, 360 };
+
         // dur: la duración que se comprime (tras el editor). El tope del 90 % sigue usando el bitrate del original completo.
         public static Plan Planear(InfoVideo m, long size, Ajustes a, double dur)
         {
@@ -267,45 +285,66 @@ namespace VideoLite
                 p.TargetB = double.MaxValue; p.Bpp = 1; p.VsSource = 1;
                 return p;
             }
-            bool hasAudio = m.HasAudio && !a.SinAudio;
-            p.HasAudio = hasAudio;
-            p.Fps = Math.Min(Math.Round(m.Fps * 100, MidpointRounding.AwayFromZero) / 100, 60);
-            if (p.Fps <= 0) p.Fps = 30;
-            int w = m.W, h = m.H, sh = Math.Min(w, h);
-            if (a.Res > 0 && sh > a.Res)
-            {
-                double k = (double)a.Res / sh;
-                // AwayFromZero = Math.round de JavaScript con positivos (C# redondea .5 al par por omisión): misma medida que plan.js
-                w = (int)Math.Round(w * k / 2, MidpointRounding.AwayFromZero) * 2; h = (int)Math.Round(h * k / 2, MidpointRounding.AwayFromZero) * 2;
-            }
-            w -= w % 2; h -= h % 2;
-            p.W = w; p.H = h;
-            // El contenedor MP4 pesa ~12 bytes por cuadro de video y por cuadro de audio AAC (~47/s a 48 kHz).
-            double overheadB = 12 * (p.Fps + (hasAudio ? 47 : 0)) * p.OutDur;
-            double totalK = Math.Max(0, a.TargetMB * 1e6 - overheadB) * 8 / p.OutDur / 1000;
-            // No tiene caso gastar más que el original: el total se topa al 90 % de su bitrate (ajustado por escala y velocidad).
+            bool hasAudio = m.HasAudio && !a.SinAudio && ConAudioA(a.Speed);
+            double fps = Math.Min(Math.Round(m.Fps * 100, MidpointRounding.AwayFromZero) / 100, 60);
+            if (fps <= 0) fps = 30;
+            if (a.FpsMax > 0) fps = Math.Min(fps, a.FpsMax);
+            bool bajo = hasAudio && AudioBajo(m);
+            // El contenedor MP4 pesa ~12 bytes por cuadro de video y por cuadro de audio AAC (~47/s a 48 kHz; uno por cada
+            // 1024 muestras).
+            double overheadB = 12 * (fps + (hasAudio ? (bajo ? m.ARate / 1024.0 : 47) : 0)) * p.OutDur;
             double srcK = size * 8.0 / m.Dur / 1000;
-            double areaK = (double)w * h / ((double)m.W * m.H);
-            double maxTotalK = srcK * Math.Min(1, areaK) * a.Speed * 0.9;
-            p.Capped = totalK > maxTotalK;
-            if (p.Capped) totalK = maxTotalK;
-            if (hasAudio)
+            Func<int, Plan> conRes = res =>
             {
-                if (totalK >= 600) p.AK = 128; else if (totalK >= 250) p.AK = 96; else if (totalK >= 120) p.AK = 64; else { p.AK = 40; p.Mono = true; }
+                var q = new Plan { OutDur = p.OutDur, HasAudio = hasAudio, Fps = fps, ARate = bajo ? m.ARate : 0 };
+                int w = m.W, h = m.H, sh = Math.Min(w, h);
+                if (res > 0 && sh > res)
+                {
+                    double k = (double)res / sh;
+                    // AwayFromZero = Math.round de JavaScript con positivos (C# redondea .5 al par por omisión): misma medida que plan.js
+                    w = (int)Math.Round(w * k / 2, MidpointRounding.AwayFromZero) * 2; h = (int)Math.Round(h * k / 2, MidpointRounding.AwayFromZero) * 2;
+                }
+                w -= w % 2; h -= h % 2;
+                q.W = w; q.H = h;
+                double totalK = Math.Max(0, a.TargetMB * 1e6 - overheadB) * 8 / q.OutDur / 1000;
+                // No tiene caso gastar más que el original: el total se topa al 90 % de su bitrate (ajustado por escala y velocidad).
+                double areaK = (double)w * h / ((double)m.W * m.H);
+                double maxTotalK = srcK * Math.Min(1, areaK) * a.Speed * 0.9;
+                q.Capped = totalK > maxTotalK;
+                if (q.Capped) totalK = maxTotalK;
+                if (hasAudio)
+                {
+                    if (bajo) { q.AK = 16; q.Mono = true; }
+                    else if (totalK >= 600) q.AK = 128; else if (totalK >= 250) q.AK = 96; else if (totalK >= 120) q.AK = 64; else { q.AK = 40; q.Mono = true; }
+                }
+                int vK = (int)Math.Floor((totalK - q.AK) * 0.96);
+                q.VK = vK;
+                // 1 = mismo bitrate total por píxel que el original
+                q.VsSource = srcK > 0 ? (vK + q.AK) / (srcK * Math.Min(1, areaK) * a.Speed) : 0;
+                q.Bpp = vK * 1000.0 / (w * h * q.Fps);
+                q.EstMB = ((vK / 0.96) + q.AK) * q.OutDur / 8000 + overheadB / 1e6;
+                // Nativo y multihilo: se puede gastar más tiempo por cuadro que en el navegador.
+                q.Preset = (long)w * h <= 1280L * 720 ? "slow" : "medium";
+                q.TooSmall = vK < 16;
+                q.TargetB = a.TargetMB * 1e6;
+                q.OverheadB = overheadB;
+                bool gira = a.Rotacion == "90" || a.Rotacion == "270";
+                q.OW = gira ? h : w; q.OH = gira ? w : h;
+                return q;
+            };
+            p = conRes(a.Res);
+            // Resolución automática: con la calidad baja (lo que antes solo se sugería), la más alta que llegue a "aceptable"
+            // (o a "parecida al original"), o 360p. Con menos pixeles, cada uno recibe más bits: se ve más nítido y se comprime más rápido. Igual que plan.js.
+            if (p.Bpp < 0.025 && p.VsSource < 0.6)
+            {
+                int corto = Math.Min(m.W, m.H), tope = a.Res > 0 && a.Res < corto ? a.Res : corto;
+                foreach (int r in ResAuto)
+                {
+                    if (r >= tope) continue;
+                    p = conRes(r); p.ResAuto = r;
+                    if (p.Bpp >= 0.025 || p.VsSource >= 0.6) break;   // aceptable, o ya parecida al original
+                }
             }
-            int vK = (int)Math.Floor((totalK - p.AK) * 0.96);
-            p.VK = vK;
-            // 1 = mismo bitrate total por píxel que el original
-            p.VsSource = srcK > 0 ? (vK + p.AK) / (srcK * Math.Min(1, areaK) * a.Speed) : 0;
-            p.Bpp = vK * 1000.0 / (w * h * p.Fps);
-            p.EstMB = ((vK / 0.96) + p.AK) * p.OutDur / 8000 + overheadB / 1e6;
-            // Nativo y multihilo: se puede gastar más tiempo por cuadro que en el navegador.
-            p.Preset = (long)w * h <= 1280L * 720 ? "slow" : "medium";
-            p.TooSmall = vK < 16;
-            p.TargetB = a.TargetMB * 1e6;
-            p.OverheadB = overheadB;
-            bool gira = a.Rotacion == "90" || a.Rotacion == "270";
-            p.OW = gira ? h : w; p.OH = gira ? w : h;
             return p;
         }
 
@@ -316,8 +355,9 @@ namespace VideoLite
             double w = m.W, h = m.H, sh = Math.Min(w, h);
             if (a.Res > 0 && sh > a.Res) { double k = a.Res / sh; w *= k; h *= k; }
             double fps = Math.Min(m.Fps > 0 ? m.Fps : 30, 60);
+            if (a.FpsMax > 0) fps = Math.Min(fps, a.FpsMax);
             double vK = 0.08 * w * h * fps / 1000;
-            double total = vK + (m.HasAudio && !a.SinAudio ? 128 : 0);
+            double total = vK + (m.HasAudio && !a.SinAudio && ConAudioA(a.Speed) ? (AudioBajo(m) ? 16 : 128) : 0);
             double mb = total * (dur / a.Speed) / 8000;
             return Math.Max(1, Math.Min(Math.Round(mb, MidpointRounding.AwayFromZero), Math.Max(1, Math.Round(size / 1e6 * 0.8, MidpointRounding.AwayFromZero))));
         }
@@ -335,7 +375,7 @@ namespace VideoLite
 
         /* ---------- Compresión ---------- */
 
-        // Menos de 1 MB se muestra en KB: "0.0 MB" o "0.03 MB → 0.03 MB" confunden. Igual que fmtMB en app.js.
+        // Menos de 1 MB se muestra en KB: "0.0 MB" o "0.03 MB a 0.03 MB" confunden. Igual que fmtMB en app.js.
         public static string Tam(double bytes)
         {
             if (bytes < 1e6) return Math.Round(bytes / 1e3).ToString(CI) + " KB";
@@ -404,7 +444,7 @@ namespace VideoLite
             switch (r) { case "90": return "transpose=1"; case "270": return "transpose=2"; case "180": return "hflip,vflip"; case "h": return "hflip"; case "v": return "vflip"; default: return null; }
         }
 
-        // progreso(fracción 0–1, texto). Devuelve la ruta del archivo creado. Lanza excepción si falla.
+        // progreso(fracción 0 a 1, texto). Devuelve la ruta del archivo creado. Lanza excepción si falla.
         public static string Comprimir(string input, InfoVideo m, Plan p, Ajustes a, string outDir, Action<double, string> progreso, out string nota)
         {
             bool noCupo;
@@ -465,7 +505,7 @@ namespace VideoLite
                     {
                         long us;
                         if (l.StartsWith("out_time_us=") && long.TryParse(l.Substring(12), out us) && us >= 0)
-                            progreso(Math.Min(1, us / 1e6 / p.OutDur), Tx.T("extrayendo") + " · " + Math.Round(Math.Min(1, us / 1e6 / p.OutDur) * 100) + " %");
+                            progreso(Math.Min(1, us / 1e6 / p.OutDur), Tx.T("extrayendo") + " - " + Math.Round(Math.Min(1, us / 1e6 / p.OutDur) * 100) + " %");
                     });
                     if (Cancelado) throw new OperationCanceledException();
                     if (c0 != 0) throw new Exception(UltimoError(errs0));
@@ -505,7 +545,7 @@ namespace VideoLite
                     long us;
                     if (!long.TryParse(l.Substring(12), out us) || us < 0) return;
                     double f = Math.Min(1, us / 1e6 / p.OutDur);
-                    progreso(b + wgt * f, label + " · " + Math.Round(f * 100) + " %");
+                    progreso(b + wgt * f, label + " - " + Math.Round(f * 100) + " %");
                 };
 
                 var a1 = common(p.VK, false); a1.AddRange(new[] { "-pass", "1", "-an", "-f", "null", "NUL" });
@@ -526,6 +566,7 @@ namespace VideoLite
                         if (g == null) a2.AddRange(new[] { "-map", "0:a:0" });
                         a2.AddRange(new[] { "-c:a", "aac", "-b:a", p.AK + "k" });
                         if (mono) a2.AddRange(new[] { "-ac", "1" });
+                        if (p.ARate > 0) a2.AddRange(new[] { "-ar", p.ARate.ToString(CI) });   // audio de teléfono: a su misma frecuencia
                         if (g == null && af.Count > 0) a2.AddRange(new[] { "-af", string.Join(",", af) });
                     }
                     else a2.Add("-an");
@@ -629,7 +670,7 @@ namespace VideoLite
                 foreach (string l in errs)
                     if (Regex.IsMatch(l, "error|invalid|failed|cannot|not supported|no such", RegexOptions.IgnoreCase)) sel.Add(l.Trim());
             if (sel.Count > 2) sel = sel.GetRange(sel.Count - 2, 2);
-            return Tx.T("ffmpegFallo") + (sel.Count > 0 ? ": " + string.Join(" · ", sel) : ".");
+            return Tx.T("ffmpegFallo") + (sel.Count > 0 ? ": " + string.Join(" - ", sel) : ".");
         }
     }
 }
