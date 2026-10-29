@@ -106,6 +106,8 @@ namespace VideoLite
         readonly List<Item> items = new List<Item>();
         readonly string[] argsIniciales;
         bool auto = true, trabajando, actualizando;
+        // pedidoMB es lo que pidió la persona (o el destino); aj.TargetMB, el que se usa, nunca baja de minimoMB (Refrescar).
+        double pedidoMB = 25; double? minimoMB;
         string ultimaCarpeta, estadoFinal;
 
         ListView lista;
@@ -113,7 +115,7 @@ namespace VideoLite
         NumericUpDown tam;
         Deslizador barraTam;
         ComboBox cbDestino, cbFormato, cbRotar;
-        Label estGrande, estLinea1, estLinea2, estado, avisoFfmpeg, ayudaSoloAudio, lblPie;
+        Label estGrande, estLinea1, estLinea2, estado, avisoFfmpeg, ayudaSoloAudio, lblPie, notaMin;
         Button btnIr, btnCancelar, btnAbrir, btnTema, btnIdioma, btnMas, btnCarpeta, btnKofi;
         LinkLabel lnkEnviarA;
         FlowLayoutPanel panelMas;
@@ -349,12 +351,15 @@ namespace VideoLite
             sec.Controls.Add(Aero.ConBorde(cbDestino));
             var filaTam = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 10) };
             barraTam = new Deslizador { Minimum = 0, Maximum = 1000, SmallChange = 10, LargeChange = 100, Width = 220, Margin = new Padding(0, 2, 8, 0) };
-            barraTam.Scroll += (s, e) => { if (!actualizando) PonerTam(DesdeBarra(barraTam.Value), true); };
+            // La barra va en MB enteros: en su extremo izquierdo da el mínimo exacto.
+            barraTam.Scroll += (s, e) => { if (!actualizando) PonerTam(minimoMB.HasValue && barraTam.Value <= barraTam.Minimum ? minimoMB.Value : DesdeBarra(barraTam.Value), true); };
             tam = new NumericUpDown { DecimalPlaces = 1, Minimum = 0.5m, Maximum = (decimal)Motor.MaxMB, Increment = 1, Width = 90, TextAlign = HorizontalAlignment.Right, Font = fBold, Margin = new Padding(0, 4, 4, 0), BackColor = Paleta.Bg, ForeColor = Paleta.Ink };
             tam.ValueChanged += (s, e) => { if (!actualizando) PonerTam((double)tam.Value, true); };
             filaTam.Controls.Add(barraTam); filaTam.Controls.Add(tam);
             filaTam.Controls.Add(new Label { Text = "MB", AutoSize = true, Font = fBold, Margin = new Padding(0, 8, 0, 0) });
             sec.Controls.Add(filaTam);
+            notaMin = new Label { ForeColor = Paleta.Amber, Font = fChico, AutoSize = true, Margin = new Padding(0, 0, 0, 10), Visible = false };
+            sec.Controls.Add(notaMin);
 
             // Calidad
             sec = Seccion();
@@ -824,17 +829,37 @@ namespace VideoLite
         int HaciaBarra(double mb) { return (int)Math.Round(Math.Log(Math.Max(1, mb)) / Math.Log(MaxBarra()) * 1000); }
         double DesdeBarra(int v) { return Math.Max(1, Math.Round(Math.Exp(v / 1000.0 * Math.Log(MaxBarra())))); }
 
+        // Si el mínimo baja después (por ejemplo, al quitar el audio), el tamaño vuelve a lo pedido.
         void PonerTam(double mb, bool delUsuario)
         {
             mb = mb < 10 ? Math.Round(mb * 10) / 10 : Math.Round(mb);
             mb = Math.Max(0.5, Math.Min(Motor.MaxMB, mb));
-            aj.TargetMB = mb;
-            actualizando = true;
-            if (delUsuario) { auto = false; cbDestino.SelectedIndex = DEST_CUSTOM; }
-            tam.Value = (decimal)mb;
-            barraTam.Value = Math.Max(0, Math.Min(1000, HaciaBarra(Math.Min(mb, MaxBarra()))));
-            actualizando = false;
+            if (delUsuario)
+            {
+                auto = false;
+                actualizando = true; cbDestino.SelectedIndex = DEST_CUSTOM; actualizando = false;
+                var min = MinimoActual();
+                if (min.HasValue && mb < min.Value) mb = min.Value;   // la persona llegó al tope: ahí se queda
+            }
+            pedidoMB = mb;
             Refrescar();
+        }
+
+        // Los videos que faltan por procesar (a los ya hechos no les toca el tamaño).
+        IEnumerable<Item> PorProcesar() { return items.Where(i => i.Info != null && (i.Estado == "listo" || i.Estado == "trabajando")); }
+
+        // El tamaño mínimo posible de esos videos: el más grande de sus mínimos. null si no hay ninguno o si ni el tope
+        // cabe (esos dicen "no cabe" en su fila). Igual que minimoActual en sitio/app.js.
+        double? MinimoActual()
+        {
+            double? min = null;
+            foreach (var it in PorProcesar())
+            {
+                var ed = EdicionDe(it);
+                var m = Motor.MinimoMB(it.Info, it.Size, aj, ed != null ? ed.Duracion() : it.Info.Dur, Motor.MaxMB);
+                if (m.HasValue && (!min.HasValue || m.Value > min.Value)) min = m;
+            }
+            return min;
         }
 
         void CambioDestino()
@@ -895,13 +920,32 @@ namespace VideoLite
             foreach (Control c in new Control[] { tam, barraTam, cbDestino, cbRotar, chkSinAudio }) c.Enabled = !trabajando && !solo;
             ayudaSoloAudio.Visible = solo;
 
+            // El tamaño no baja del mínimo posible (Motor.MinimoMB): la barra y el número empiezan ahí y, al llegar, se avisa.
+            // Mientras se procesa no se recalcula, para que el tamaño no cambie a media cola.
+            if (!trabajando) minimoMB = solo ? null : MinimoActual();
+            aj.TargetMB = Math.Max(pedidoMB, minimoMB ?? 0);
+            actualizando = true;
+            tam.Minimum = (decimal)(minimoMB ?? 0.5);
+            tam.Value = (decimal)aj.TargetMB;
+            barraTam.Minimum = minimoMB.HasValue ? Math.Max(0, Math.Min(1000, HaciaBarra(minimoMB.Value))) : 0;
+            barraTam.Value = Math.Max(0, Math.Min(1000, HaciaBarra(Math.Min(aj.TargetMB, MaxBarra()))));
+            actualizando = false;
+            bool enMin = minimoMB > 0.5 && aj.TargetMB <= minimoMB;
+            notaMin.Visible = enMin;
+            if (enMin)
+            {
+                bool conAudio = !aj.SinAudio && Motor.ConAudioA(aj.Speed) && PorProcesar().Any(i => i.Info.HasAudio);
+                notaMin.Text = Tx.T(PorProcesar().Count() > 1 ? "minimoVarios" : "minimoUno", minimoMB.Value.ToString(CI) + " MB") +
+                    (conAudio ? Tx.T("minimoPara3") : Tx.T(aj.Speed < 16 ? "minimoPara2" : "minimoPara1"));
+            }
+
             double antes = 0, despues = 0; int n = 0; Plan peor = null; bool alguno = false;
             lista.BeginUpdate();
             foreach (var it in items)
             {
                 var sub = it.Lv.SubItems;
                 if (it.Info != null)
-                    sub[1].Text = Mb(it.Size) + " - " + Dur(it.Info.Dur) + " - " + it.Info.W + "x" + it.Info.H + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
+                    sub[1].Text = Mb(it.Size) + " - " + Dur(it.Info.Dur) + " - " + it.Info.W + "x" + it.Info.H + " - " + Math.Round(it.Info.Fps) + " fps" + (it.Info.HasAudio ? "" : Tx.T("sinAudioMeta"));
                 if (it.Estado == "error") { sub[4].Text = it.Error; it.Lv.ForeColor = Paleta.Danger; continue; }
                 if (it.Estado == "hecho" || it.Estado == "trabajando" || it.Info == null) continue;
                 var ed = EdicionDe(it);
@@ -922,9 +966,10 @@ namespace VideoLite
                 int nivel;
                 sub[2].Text = "~" + Mb(it.Plan.EstMB * 1e6);
                 sub[3].Text = Motor.Calidad(it.Plan, out nivel);
-                // A x4 o más el video va sin audio: se dice en la lista.
-                bool sinAudioPorVel = it.Info.HasAudio && !aj.SinAudio && !it.Plan.HasAudio;
-                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "x" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "") + (sinAudioPorVel ? Tx.T("sinAudioMeta") : "");
+                // Los cuadros por segundo y el audio con que sale; "sin audio" si el original tenía (lo quitó la persona o va a x4 o más).
+                string audio = it.Plan.HasAudio ? Tx.T(it.Plan.Mono ? "audioKMono" : "audioK", it.Plan.AK) : it.Info.HasAudio ? Tx.T("sinAudioSale") : "";
+                sub[4].Text = Tx.T("porComprimir", it.Plan.OW + "x" + it.Plan.OH + " " + aj.Formato.ToUpperInvariant()) + Tx.T("salidaFps", Math.Round(it.Plan.Fps)) + audio + (dura ? Tx.T("dura", Dur(it.Plan.OutDur)) : "");
+                it.Lv.ToolTipText = it.Ruta + "\n" + sub[1].Text + "\n" + sub[4].Text;   // con la ventana chica, las columnas cortan el texto
                 it.Lv.ForeColor = Paleta.Ink;
                 antes += it.Size; despues += it.Plan.EstMB * 1e6; n++;
                 if (peor == null || it.Plan.Bpp < peor.Bpp) peor = it.Plan;
@@ -969,7 +1014,7 @@ namespace VideoLite
             AjustarColumnas();
         }
 
-        static readonly double[] PesoCol = { 2.5, 2.5, 1.5, 1.7, 2.2 };
+        static readonly double[] PesoCol = { 2.3, 2.5, 1.2, 1.6, 3.0 };   // "Estado" dice resolución, cuadros, audio y duración
 
         void AjustarColumnas()
         {
@@ -992,7 +1037,7 @@ namespace VideoLite
             if (rep != null) rep.Pausa();
             Refrescar();
             EdPintar();
-            var ajCopia = new Ajustes { TargetMB = aj.TargetMB, Res = aj.Res, Speed = aj.Speed, Fix = aj.Fix, Voz = aj.Voz, Formato = aj.Formato, Rotacion = aj.Rotacion, SinAudio = aj.SinAudio };
+            var ajCopia = new Ajustes { TargetMB = aj.TargetMB, Res = aj.Res, Speed = aj.Speed, FpsMax = aj.FpsMax, Fix = aj.Fix, Voz = aj.Voz, Formato = aj.Formato, Rotacion = aj.Rotacion, SinAudio = aj.SinAudio };
             bool junto = chkJunto.Checked; string carpeta = txtCarpeta.Text;
             var reloj = Stopwatch.StartNew();
             var hilo = new Thread(() =>

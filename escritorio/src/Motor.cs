@@ -20,6 +20,7 @@ namespace VideoLite
         public bool HasAudio;
         public int Ach;
         public int ARate;        // frecuencia del audio en Hz (0 si no se sabe)
+        public int AKbps;        // bitrate del audio en kbps (0 si no se sabe): la calidad se mide solo con la imagen
         public string VCodec, ACodec;
     }
 
@@ -227,6 +228,8 @@ namespace VideoLite
                 m.ACodec = Regex.Match(s, @"Audio: (\w+)").Groups[1].Value;
                 Match hz = Regex.Match(s, @"(\d+) Hz");
                 if (hz.Success) m.ARate = int.Parse(hz.Groups[1].Value, CI);
+                Match kb = Regex.Match(s, @"(\d+) kb/s");
+                if (kb.Success) m.AKbps = int.Parse(kb.Groups[1].Value, CI);
             }
             m.HasAudio = m.Ach > 0;
             Match rot = Regex.Match(txt, @"rotation of (-?[\d.]+) degrees");
@@ -268,6 +271,9 @@ namespace VideoLite
         public static bool AudioBajo(InfoVideo m) { return m.ARate > 0 && m.ARate <= 16000; }
         // A x4 o más el audio ya no se entiende: el video va sin audio (sirve para repasar grabaciones largas).
         public static bool ConAudioA(double speed) { return speed <= 2; }
+        // Bitrate del video del original, sin su audio: la calidad se mide solo con la imagen. Si no se sabe el del audio, se
+        // supone 128 kbps (64 si es de teléfono); nunca se descuenta más de la mitad del total. Igual que videoOrigK en plan.js.
+        static double VideoOrigK(InfoVideo m, double srcK) { return srcK - Math.Min(srcK / 2, m.HasAudio ? (m.AKbps > 0 ? m.AKbps : AudioBajo(m) ? 64 : 128) : 0); }
         // Resolución automática: si con la elegida la calidad queda baja, se prueba con estas (lado corto), de mayor a menor.
         static readonly int[] ResAuto = { 1080, 720, 480, 360 };
 
@@ -293,7 +299,7 @@ namespace VideoLite
             // El contenedor MP4 pesa ~12 bytes por cuadro de video y por cuadro de audio AAC (~47/s a 48 kHz; uno por cada
             // 1024 muestras).
             double overheadB = 12 * (fps + (hasAudio ? (bajo ? m.ARate / 1024.0 : 47) : 0)) * p.OutDur;
-            double srcK = size * 8.0 / m.Dur / 1000;
+            double srcK = size * 8.0 / m.Dur / 1000, srcVK = VideoOrigK(m, srcK);
             Func<int, Plan> conRes = res =>
             {
                 var q = new Plan { OutDur = p.OutDur, HasAudio = hasAudio, Fps = fps, ARate = bajo ? m.ARate : 0 };
@@ -319,8 +325,8 @@ namespace VideoLite
                 }
                 int vK = (int)Math.Floor((totalK - q.AK) * 0.96);
                 q.VK = vK;
-                // 1 = mismo bitrate total por píxel que el original
-                q.VsSource = srcK > 0 ? (vK + q.AK) / (srcK * Math.Min(1, areaK) * a.Speed) : 0;
+                // 1 = la imagen recibe los mismos bits por píxel que la del original
+                q.VsSource = srcVK > 0 ? vK / (srcVK * Math.Min(1, areaK) * a.Speed) : 0;
                 q.Bpp = vK * 1000.0 / (w * h * q.Fps);
                 q.EstMB = ((vK / 0.96) + q.AK) * q.OutDur / 8000 + overheadB / 1e6;
                 // Nativo y multihilo: se puede gastar más tiempo por cuadro que en el navegador.
@@ -346,6 +352,21 @@ namespace VideoLite
                 }
             }
             return p;
+        }
+
+        // Tamaño mínimo posible: el valor más chico de la barra (de 0.1 en 0.1 MB abajo de 10, de 1 en 1 desde 10, desde 0.5)
+        // con el que el plan ya no da "No cabe". Lo busca con el mismo Planear, así que nunca lo contradice. null si ni maxMB
+        // cabe. Igual que minimoMB en sitio/plan.js.
+        static double ValorBarra(int i) { return i < 95 ? (5 + i) / 10.0 : i - 85; }
+        public static double? MinimoMB(InfoVideo m, long size, Ajustes a, double dur, double maxMB)
+        {
+            var prueba = new Ajustes { Res = a.Res, Speed = a.Speed, FpsMax = a.FpsMax, Fix = a.Fix, Voz = a.Voz, Formato = a.Formato, Rotacion = a.Rotacion, SinAudio = a.SinAudio };
+            Func<double, bool> cabe = mb => { prueba.TargetMB = mb; return !Planear(m, size, prueba, dur).TooSmall; };
+            int lo = 0, hi = 95 + (int)Math.Floor(maxMB) - 10;
+            if (!cabe(ValorBarra(hi))) return null;
+            if (cabe(ValorBarra(lo))) return ValorBarra(lo);
+            while (hi - lo > 1) { int mid = (lo + hi) >> 1; if (cabe(ValorBarra(mid))) hi = mid; else lo = mid; }
+            return ValorBarra(hi);
         }
 
         public static double RecomendarMB(InfoVideo m, long size, Ajustes a) { return RecomendarMB(m, size, a, m.Dur); }

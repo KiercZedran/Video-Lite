@@ -18,10 +18,13 @@ Lo que cambió desde la 0.6. Sale de una prueba con grabaciones de cámaras de s
 - **Velocidades x4, x8 y x16,** sin audio, para repasar grabaciones largas. A x8 y con 15 cuadros por segundo, una grabación de 4 horas cabe en 20 MB.
 - **Cuadros por segundo** en "Más opciones": los del original o 15, que pesa menos. En grabaciones de cámaras o de pantalla casi no se nota.
 - **La resolución baja sola** cuando el tamaño no alcanza para que se vea bien; antes solo lo sugería. El estimado dice a cuál bajó, por ejemplo: "Sale en 720p para que se vea más nítido".
+- **El tamaño se detiene en el mínimo posible.** La barra y el número ya no bajan de ahí, y abajo aparece, por ejemplo: "71 MB es el mínimo posible para este video". También dice qué hacer para bajar más: quitar el audio, subir la velocidad o recortar el video. Antes había que buscar el límite a mano hasta que dejaba de salir "No cabe". Si eliges un destino más chico que el mínimo, el tamaño se queda en el mínimo y vuelve al del destino cuando ya cabe.
+- **Cada video dice con cuántos cuadros por segundo y con qué audio sale,** por ejemplo "30 fps, audio 96 kbps".
 
 ### Cambios
 
 **Página y app**
+- **La calidad esperada se mide solo con la imagen.** Antes contaba también el audio, y un mismo video podía decir "Parecida al original" con audio y "Muy baja" sin él, aunque la imagen recibiera lo mismo. Como la resolución automática usa esa misma medida, con videos ya ligeros a veces baja un escalón más que antes.
 - **El audio de teléfono** (8 o 16 kHz, como el de las cámaras de seguridad) se queda en 16 kbps, en lugar de 40 a 128. Más no se oye mejor, y así la imagen se lleva el espacio.
 - **Los textos ya no usan símbolos que no están en el teclado:** van "...", "~13 MB", "1920x1080", "x2" y "de 0:06 a 0:08".
 - **El pie** también está en las páginas de privacidad y de error.

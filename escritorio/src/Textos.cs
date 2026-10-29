@@ -107,6 +107,12 @@ namespace VideoLite
             { "igual", new[] { "casi igual", "about the same" } },
             { "calEsperada", new[] { "Calidad esperada: {0}", "Expected quality: {0}" } },
             { "resAuto", new[] { ". Sale en {0}p para que se vea más nítido.", ". It comes out at {0}p to look sharper." } },
+            // Debajo del tamaño, al llegar al mínimo posible
+            { "minimoUno", new[] { "{0} es el mínimo posible para este video.", "{0} is the smallest possible size for this video." } },
+            { "minimoVarios", new[] { "{0} es el mínimo posible para estos videos.", "{0} is the smallest possible size for these videos." } },
+            { "minimoPara3", new[] { " Para bajar más, quita el audio, sube la velocidad o recorta el video en el editor.", " To go lower, remove the audio, raise the speed or trim the video in the editor." } },
+            { "minimoPara2", new[] { " Para bajar más, sube la velocidad o recorta el video en el editor.", " To go lower, raise the speed or trim the video in the editor." } },
+            { "minimoPara1", new[] { " Para bajar más, recorta el video en el editor.", " To go lower, trim the video in the editor." } },
             { "doble", new[] { "Doble clic en un video para verlo en su carpeta.", "Double-click a video to see it in its folder." } },
             { "comprimir", new[] { "Procesar", "Process" } },
             { "comprimirN", new[] { "Procesar {0} videos", "Process {0} videos" } },
@@ -121,6 +127,10 @@ namespace VideoLite
             // Estados en la lista
             { "porComprimir", new[] { "por procesar - sale {0}", "to process - output {0}" } },
             { "dura", new[] { ", dura {0}", ", lasts {0}" } },
+            { "salidaFps", new[] { ", {0} fps", ", {0} fps" } },
+            { "audioK", new[] { ", audio {0} kbps", ", audio {0} kbps" } },
+            { "audioKMono", new[] { ", audio {0} kbps mono", ", audio {0} kbps mono" } },
+            { "sinAudioSale", new[] { ", sin audio", ", no audio" } },
             { "analizando", new[] { "analizando...", "analyzing..." } },
             { "noCabe", new[] { "no cabe", "doesn't fit" } },
             { "subeTam", new[] { "sube el tamaño", "raise the size" } },
