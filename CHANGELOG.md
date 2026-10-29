@@ -8,9 +8,14 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ---
 
-## 0.7 - en preparación (sin publicar)
+## 0.7 - 2026-10-29 - publicada
 
 Lo que cambió desde la 0.6. Sale de una prueba con grabaciones de cámaras de seguridad: horas de video que se querían mandar por WhatsApp o Discord.
+
+| Descarga | Tamaño | SHA-256 |
+|---|---|---|
+| `VideoLite-win64.zip` | 7 667 495 B | `b8691796fe49c625b08e596e6aa9a683560c137f2afbb69cd0aa6b81012c1564` |
+| `VideoLite-ffmpeg-fuentes.zip` | 17 155 984 B | `14d34da9e589b3ff26aaf0a581093383d9781b89711bafb735707b6d776bddc9` |
 
 ### Novedades
 
