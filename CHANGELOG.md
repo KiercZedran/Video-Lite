@@ -23,7 +23,7 @@ Lo que cambió desde la 0.7. La página se sube sin cambiar de número, porque e
 - **El logo de Zedran Labs ahora es cian.** La Z y los ojos eran verdes, y el verde queda para Zedran Tech. Cambian el logo del encabezado, el ícono de la pestaña y el de la app.
 
 **Página**
-- **En la privacidad, "Volver" ahora es un botón verde** arriba, a la izquierda del encabezado. En pantallas angostas va encima de él. Antes era un enlace al final de la página.
+- **En la privacidad, para volver hay un botón verde y redondo con una flecha,** a la izquierda del encabezado. En pantallas angostas va dentro del encabezado, antes del logo. Antes era un enlace al final de la página.
 - **El logo y el nombre del encabezado ya no son un enlace.** Antes llevaban a zedran.xyz, que sigue en el pie.
 
 ---
