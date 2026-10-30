@@ -8,6 +8,22 @@ Todos los cambios de la web ([videolite.zedran.xyz](https://videolite.zedran.xyz
 
 ---
 
+## Sin publicar
+
+Lo que cambió desde la 0.7. La página se sube sin cambiar de número, porque el del pie es el de la app que se descarga. El ícono nuevo de la app llega con su próxima versión.
+
+### Novedades
+
+**Página**
+- **La versión de la página y de la app, en `/version.json`:** su número, la fecha en que salió y, de la app, cada archivo con lo que pesa. Con eso, zedran.xyz muestra la versión al día y nadie la tiene que copiar a mano.
+
+### Cambios
+
+**Página y app**
+- **El logo de Zedran Labs ahora es cian.** La Z y los ojos eran verdes, y el verde queda para Zedran Tech. Cambian el logo del encabezado, el ícono de la pestaña y el de la app.
+
+---
+
 ## 0.7 - 2026-10-29 - publicada
 
 Lo que cambió desde la 0.6. Sale de una prueba con grabaciones de cámaras de seguridad: horas de video que se querían mandar por WhatsApp o Discord.
